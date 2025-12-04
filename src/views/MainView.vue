@@ -1,11 +1,22 @@
 <template>
-    <Mapcomponent />
+    <div>
+        <SearchBar />
+    </div>
+    <div>
+        <MapComponent />
+    </div>
+    <div>
+        <nav-bar></nav-bar>
+    </div>
+    <router-view />
 </template>
 
 <script setup>
-import Mapcomponent from '@/components/Mapcomponent.vue';
+import MapComponent from '@/components/main/Mapcomponent.vue';
+import SearchBar from '@/components/main/SearchBar.vue';
+import NavBar from '@/components/common/Navbar.vue';
 </script>
-        
+
 <style>
 
 </style>
