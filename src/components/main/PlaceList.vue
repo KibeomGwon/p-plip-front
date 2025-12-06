@@ -13,7 +13,7 @@
         <div class="place-info">
           <h3 class="place-name">{{ place.name }}</h3>
           <p class="place-desc">{{ place.description }}</p>
-          <button class="detail-btn">자세히 보기</button>
+          <button class="detail-btn" @click="goToDetail(place.id)">자세히 보기</button>
         </div>
       </div>
     </div>
@@ -22,9 +22,15 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const emit = defineEmits(['close']);
 const listContainer = ref(null);
+
+const goToDetail = (id) => {
+  router.push({ name: 'place-detail', params: { id } });
+};
 const scrollContainer = ref(null);
 
 

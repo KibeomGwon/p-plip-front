@@ -26,6 +26,11 @@ const router = createRouter({
       component: () => import('@/views/RouletteView.vue')
     },
     {
+      path: '/place/:id',
+      name: 'place-detail',
+      component: () => import('@/views/PlaceDetailView.vue')
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: MyInfoView
