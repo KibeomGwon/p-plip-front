@@ -218,11 +218,16 @@ const stopDrag = () => {
     cursor: grabbing;
 }
 
+.sheet-handle-bar:active .sheet-handle {
+    background-color: #3b82f6;
+}
+
 .sheet-handle {
     width: 40px;
     height: 4px;
     background-color: #e0e0e0;
     border-radius: 2px;
+    transition: background-color 0.2s;
 }
 
 .sheet-content {
@@ -239,10 +244,12 @@ const stopDrag = () => {
 }
 
 .bottom-nav {
-    position: absolute;
+    position: fixed;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
     height: calc(60px + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
     z-index: 30;

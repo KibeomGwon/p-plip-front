@@ -13,7 +13,20 @@
                     <span class="nav-label">플랜</span>
                 </router-link>
             </li>
-             <li class="nav-item">
+            <li class="nav-item">
+                <router-link :to="{ name: 'roulette' }" class="nav-link">
+                    <div class="icon-container">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 2L12 12" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 12L19 19" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 12L5 19" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <span class="nav-label">랜덤여행</span>
+                </router-link>
+            </li>
+            <li class="nav-item">
                 <router-link :to="{ name: 'main' }" class="nav-link">
                     <div class="icon-container">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

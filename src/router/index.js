@@ -21,6 +21,11 @@ const router = createRouter({
       component: PlanView
     },
     {
+      path: '/roulette',
+      name: 'roulette',
+      component: () => import('@/views/RouletteView.vue')
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: MyInfoView
