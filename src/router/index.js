@@ -3,8 +3,9 @@ import MainView from '@/views/MainView.vue'
 import PlanView from '@/views/PlanView.vue'
 import MyInfoView from '@/views/MyInfoView.vue'
 import BoardView from '@/views/board/BoardListView.vue'
-import FreeBoardList from '@/components/board/FreeBoardList.vue'
-import NoticeBoardList from '@/components/board/NoticeBoardList.vue'
+import FreeBoardList from '@/components/board/list/FreeBoardList.vue'
+import FreeBoardDetailView from '@/views/board/FreeBoardDetailView.vue'
+import NoticeBoardList from '@/components/board/list/NoticeBoardList.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,14 +21,15 @@ const router = createRouter({
       component: PlanView
     },
     {
-      path: '/myinfo',
-      name: 'myinfo',
+      path: '/profile',
+      name: 'profile',
       component: MyInfoView
     },
     {
       path: '/board',
       name: 'board',
       component: BoardView,
+      redirect: { name: 'freeboard' },
       children: [
         {
           path: 'freeboard',
@@ -35,21 +37,26 @@ const router = createRouter({
           component: FreeBoardList
         },
         {
-          path: 'freeboard/:id',
-          name: 'freeboard-detail',
-          component: FreeBoardList
-        },
-        {
           path: 'noticeboard',
           name: 'noticeboard',
           component: NoticeBoardList
         },
-        {
-          path: 'noticeboard/:id',
-          name: 'noticeboard-detail',
-          component: NoticeBoardList
-        }
       ]
+    },
+    {
+      path: '/board/freeboard/:id',
+      name: 'freeboard-detail',
+      component: FreeBoardDetailView
+    },
+    {
+      path: '/board/noticeboard/:id',
+      name: 'noticeboard-detail',
+      component: () => import('@/views/board/NoticeBoardDetailView.vue')
+    },
+    {
+      path: '/board/freeboard/write',
+      name: 'freeboard-write',
+      component: () => import('@/views/board/FreeBoardWriteView.vue')
     }
   ],
 })
