@@ -4,12 +4,6 @@
     class="place-list-container" 
   >
     <div class="place-list-header">
-      <button 
-        class="close-btn" 
-        @click="$emit('close')"
-        @mousedown="startDrag"
-        @touchstart="startDrag"
-      >닫기</button>
       <h2 class="section-title">주변 추천 장소</h2>
     </div>
     
@@ -33,42 +27,7 @@ const emit = defineEmits(['close']);
 const listContainer = ref(null);
 const scrollContainer = ref(null);
 
-// Handle Bar Drag Logic
-const isDragging = ref(false);
-const dragStartY = ref(0);
 
-const startDrag = (e) => {
-  isDragging.value = true;
-  dragStartY.value = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-  
-  window.addEventListener('mousemove', onDrag);
-  window.addEventListener('mouseup', endDrag);
-  window.addEventListener('touchmove', onDrag);
-  window.addEventListener('touchend', endDrag);
-};
-
-const onDrag = (e) => {
-  if (!isDragging.value) return;
-  // Optional: Add visual feedback here if needed
-};
-
-const endDrag = (e) => {
-  if (!isDragging.value) return;
-  
-  const clientY = e.type.includes('mouse') ? e.clientY : e.changedTouches[0].clientY;
-  const deltaY = clientY - dragStartY.value;
-  
-  // If dragged down more than 50px
-  if (deltaY > 50) {
-    emit('close');
-  }
-  
-  isDragging.value = false;
-  window.removeEventListener('mousemove', onDrag);
-  window.removeEventListener('mouseup', endDrag);
-  window.removeEventListener('touchmove', onDrag);
-  window.removeEventListener('touchend', endDrag);
-};
 
 const places = ref([
   {
