@@ -8,7 +8,7 @@
       </button>
     </div>
     <div class="modal-body">
-      <PlaceDetailContent :place="place" />
+      <PlaceDetailContent :place="place" :visible="false"/>
     </div>
   </div>
 </template>

@@ -13,9 +13,6 @@
 
     <!-- Bottom Content Wrapper -->
     <PlaceDetailContent :place="place" />
-
-
-    <PlaceActionButtons @click="onClickActionButtons"/>
   </div>
 </template>
 
@@ -23,7 +20,6 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import PlaceDetailContent from '@/components/attraction/PlaceDetailContent.vue';
-import PlaceActionButtons from '@/components/attraction/PlaceActionButtons.vue';
 
 const route = useRoute();
 const place = ref({
@@ -36,10 +32,6 @@ const place = ref({
   ],
   tags: ['오션뷰', '감성맛집', '즉흥여행']
 });
-
-const onClickActionButtons = () => {
-  console.log('Action buttons clicked');
-};
 
 // In a real app, fetch place details using route.params.id
 onMounted(() => {

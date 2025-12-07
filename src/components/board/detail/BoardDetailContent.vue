@@ -2,7 +2,7 @@
   <div class="board-detail-content">
     <!-- Image Carousel -->
     <div class="image-carousel">
-      <div class="carousel-track">
+      <div class="carousel-track" @scroll="onScroll" @wheel="onWheel">
         <div v-for="(img, index) in post.images" :key="index" class="carousel-item">
           <img :src="img" alt="Post Image" class="post-image" />
         </div>
@@ -36,6 +36,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import { useRelativeTime } from '@/composables/useRelativeTime';
 
 const { formatTime } = useRelativeTime();
@@ -55,6 +56,20 @@ defineProps({
     })
   }
 });
+
+const currentImageIndex = ref(0);
+
+const onScroll = (e) => {
+  const scrollLeft = e.target.scrollLeft;
+  const width = e.target.clientWidth;
+  currentImageIndex.value = Math.round(scrollLeft / width);
+};
+
+const onWheel = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.scrollLeft += e.deltaY;
+};
 </script>
 
 <style scoped>

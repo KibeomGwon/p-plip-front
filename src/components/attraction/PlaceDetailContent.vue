@@ -2,7 +2,7 @@
   <div class="bottom-content-wrapper">
     <!-- Image Carousel -->
     <div class="image-carousel">
-      <div class="carousel-track" @scroll="onScroll">
+      <div class="carousel-track" @scroll="onScroll" @wheel="onWheel">
         <div v-for="(img, index) in place.images" :key="index" class="carousel-item">
           <img :src="img" alt="Place Image" class="place-image" />
         </div>
@@ -20,12 +20,16 @@
 
     <!-- Content Card -->
     <PlaceInfoCard :place="place" />
+
+    <!-- Action Buttons -->
+    <PlaceActionButtons v-if="visible" :place="place" />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import PlaceInfoCard from './PlaceInfoCard.vue';
+import PlaceActionButtons from './PlaceActionButtons.vue';
 
 defineProps({
   place: {
@@ -37,6 +41,11 @@ defineProps({
       images: [],
       tags: []
     })
+  },
+  visible: {
+    type: Boolean,
+    required: true,
+    default: true
   }
 });
 
@@ -46,6 +55,12 @@ const onScroll = (e) => {
   const scrollLeft = e.target.scrollLeft;
   const width = e.target.clientWidth;
   currentImageIndex.value = Math.round(scrollLeft / width);
+};
+
+const onWheel = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.scrollLeft += e.deltaY;
 };
 </script>
 
@@ -60,6 +75,21 @@ const onScroll = (e) => {
   padding-top: 20px; /* Add space between header and content */
   touch-action: pan-y; /* Allow vertical scrolling */
   overscroll-behavior: contain;
+}
+
+.bottom-content-wrapper::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+}
+
+.bottom-content-wrapper::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 3px;
+}
+
+.bottom-content-wrapper:hover::-webkit-scrollbar-thumb,
+.bottom-content-wrapper:active::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .image-carousel {

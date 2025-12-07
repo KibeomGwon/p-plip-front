@@ -7,7 +7,6 @@ import FreeBoardList from '@/components/board/list/FreeBoardList.vue'
 import FreeBoardDetailView from '@/views/board/FreeBoardDetailView.vue'
 import NoticeBoardList from '@/components/board/list/NoticeBoardList.vue'
 import PlaceDetailView from '@/views/attraction/PlaceDetailView.vue'
-import MyPlanListView from '@/views/myinfo/MyPlanListView.vue'
 import MyPostListView from '@/views/myinfo/MyPostListView.vue'
 
 const router = createRouter({
@@ -27,11 +26,6 @@ const router = createRouter({
       path: '/roulette',
       name: 'roulette',
       component: () => import('@/views/RouletteView.vue')
-    },
-    {
-      path: '/my-plans',
-      name: 'my-plans',
-      component: MyPlanListView
     },
     {
       path: '/my-plans/:id/todo',

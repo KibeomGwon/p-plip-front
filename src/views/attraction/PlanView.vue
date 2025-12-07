@@ -8,60 +8,53 @@
       <div class="content">
         <!-- Section: Ongoing Trips -->
         <section class="section ongoing-section">
-          <h2 class="section-title">진행 중인 여행</h2>
+          <div class="section-header">
+            <h2 class="section-title">진행 중인 여행</h2>
+            <SortFilter v-model="ongoingSortOrder" />
+          </div>
           <div 
             class="ongoing-list" 
-            ref="scrollContainer"
-            @mousedown="startDrag"
+            ref="ongoingListRef"
+            @mousedown="startDrag($event, 'ongoing')"
             @mouseleave="stopDrag"
             @mouseup="stopDrag"
-            @mousemove="onDrag"
+            @mousemove="onDrag($event, 'ongoing')"
+            @wheel="onWheel($event, 'ongoing')"
           >
             <!-- Card Item -->
-            <div v-for="trip in ongoingTrips" :key="trip.id" class="ongoing-card">
-              <div class="card-image-wrapper" :style="{ backgroundImage: `url(${trip.image})` }">
-                <span class="d-day-badge">{{ calculateDDay(trip.startDate) }}</span>
-                <div class="card-overlay">
-                  <h3 class="trip-title">{{ trip.title }}</h3>
-                  <p class="trip-date">{{ trip.startDate }} - {{ trip.endDate }}</p>
-                </div>
-              </div>
-              <div class="card-footer">
-                <div class="progress-bar-container">
-                  <div class="progress-bar" :style="{ width: trip.progress + '%' }"></div>
-                </div>
-                <div class="progress-info">
-                  <span>{{ trip.progress }}%</span>
-                  <button class="continue-btn" @click="continuePlan(trip.id)">이어서 계획하기</button>
-                </div>
-              </div>
-            </div>
+            <TripCard 
+              v-for="trip in sortedOngoingTrips" 
+              :key="trip.id" 
+              :trip="trip"
+            />
           </div>
         </section>
 
         <!-- Section: Past Trips -->
         <section class="section past-section">
-          <h2 class="section-title">지난 여행</h2>
-          <div class="past-list">
-            <div v-for="trip in pastTrips" :key="trip.id" class="past-card">
-              <div class="past-card-image" :style="{ backgroundImage: `url(${trip.image})` }"></div>
-              <div class="past-card-info">
-                <h3 class="past-trip-title">{{ trip.title }}</h3>
-                <p class="past-trip-date">{{ trip.startDate }} - {{ trip.endDate }}</p>
-              </div>
-            </div>
+          <div class="section-header">
+            <h2 class="section-title">지난 여행</h2>
+            <SortFilter v-model="pastSortOrder" />
           </div>
+          <div 
+            class="ongoing-list"
+            ref="pastListRef"
+            @mousedown="startDrag($event, 'past')"
+            @mouseleave="stopDrag"
+            @mouseup="stopDrag"
+            @mousemove="onDrag($event, 'past')"
+            @wheel="onWheel($event, 'past')"
+          >
+            <TripCard 
+              v-for="trip in sortedPastTrips" 
+              :key="trip.id" 
+              :trip="trip"
+            />
+          </div>
+          
         </section>
       </div>
     </div>
-
-    <!-- Floating Action Button -->
-    <button class="fab" @click="createNewPlan">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
-    </button>
 
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
@@ -71,8 +64,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import NavBar from '@/components/common/Navbar.vue';
+import TripCard from '@/components/attraction/TripCard.vue';
+import SortFilter from '@/components/common/SortFilter.vue';
 
 const ongoingTrips = ref([
   {
@@ -99,6 +94,7 @@ const pastTrips = ref([
     title: '강릉 식도락 여행',
     startDate: '2023.08.01',
     endDate: '2023.08.03',
+    progress: 100,
     image: 'https://images.unsplash.com/photo-1554652285-b9f2ad8708c0?q=80&w=400&auto=format&fit=crop'
   },
   {
@@ -106,56 +102,73 @@ const pastTrips = ref([
     title: '부산 뚜벅이 여행',
     startDate: '2023.05.10',
     endDate: '2023.05.12',
+    progress: 100,
     image: 'https://images.unsplash.com/photo-1582218000305-6497fba9d168?q=80&w=400&auto=format&fit=crop'
   }
 ]);
 
-const calculateDDay = (startDate) => {
-  const today = new Date();
-  // Reset time to midnight for accurate day calculation
-  today.setHours(0, 0, 0, 0);
-  
-  const targetDate = new Date(startDate);
-  targetDate.setHours(0, 0, 0, 0);
-  
-  const diffTime = targetDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 0) return 'D-Day';
-  if (diffDays < 0) return `D+${Math.abs(diffDays)}`;
-  return `D-${diffDays}`;
+// Sorting Logic
+const ongoingSortOrder = ref('desc');
+const pastSortOrder = ref('desc');
+
+const sortTrips = (trips, order) => {
+  return [...trips].sort((a, b) => {
+    const dateA = new Date(a.startDate);
+    const dateB = new Date(b.startDate);
+    return order === 'desc' ? dateB - dateA : dateA - dateB;
+  });
 };
+
+const sortedOngoingTrips = computed(() => sortTrips(ongoingTrips.value, ongoingSortOrder.value));
+const sortedPastTrips = computed(() => sortTrips(pastTrips.value, pastSortOrder.value));
 
 const continuePlan = (id) => {
   console.log('Continue plan', id);
 };
 
-const createNewPlan = () => {
-  console.log('Create new plan');
-};
+// Drag & Wheel Scroll Logic
+const ongoingListRef = ref(null);
+const pastListRef = ref(null);
 
-// Drag to Scroll Logic
-const scrollContainer = ref(null);
 const isDown = ref(false);
 const startX = ref(0);
 const scrollLeft = ref(0);
+const activeContainer = ref(null);
 
-const startDrag = (e) => {
+const getContainer = (type) => {
+  return type === 'ongoing' ? ongoingListRef.value : pastListRef.value;
+};
+
+const startDrag = (e, type) => {
   isDown.value = true;
-  startX.value = e.pageX - scrollContainer.value.offsetLeft;
-  scrollLeft.value = scrollContainer.value.scrollLeft;
+  activeContainer.value = getContainer(type);
+  startX.value = e.pageX - activeContainer.value.offsetLeft;
+  scrollLeft.value = activeContainer.value.scrollLeft;
 };
 
 const stopDrag = () => {
   isDown.value = false;
+  activeContainer.value = null;
 };
 
-const onDrag = (e) => {
+const onDrag = (e, type) => {
   if (!isDown.value) return;
+  const container = getContainer(type);
+  if (activeContainer.value !== container) return; // Prevent dragging wrong container
+  
   e.preventDefault();
-  const x = e.pageX - scrollContainer.value.offsetLeft;
+  const x = e.pageX - container.offsetLeft;
   const walk = (x - startX.value) * 2; // Scroll-fast
-  scrollContainer.value.scrollLeft = scrollLeft.value - walk;
+  container.scrollLeft = scrollLeft.value - walk;
+};
+
+const onWheel = (e, type) => {
+  const container = getContainer(type);
+  if (container) {
+    e.preventDefault();
+    e.stopPropagation();
+    container.scrollLeft += e.deltaY;
+  }
 };
 </script>
 
@@ -179,6 +192,21 @@ const onDrag = (e) => {
   overscroll-behavior: contain;
 }
 
+.scroll-container::-webkit-scrollbar {
+  width: 6px;
+  background-color: transparent;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 3px;
+}
+
+.scroll-container:hover::-webkit-scrollbar-thumb,
+.scroll-container:active::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
 .header {
   padding: 20px;
 }
@@ -200,11 +228,18 @@ const onDrag = (e) => {
   padding: 0 20px;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
 .section-title {
   font-size: 20px;
   font-weight: 700;
-  margin-bottom: 16px;
   color: #111;
+  margin: 0;
 }
 
 /* Ongoing Trips Carousel */
@@ -219,142 +254,6 @@ const onDrag = (e) => {
 }
 .ongoing-list::-webkit-scrollbar {
   display: none;
-}
-
-.ongoing-card {
-  min-width: 300px;
-  width: 90%; /* On mobile, almost full width */
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  flex-shrink: 0;
-}
-
-.card-image-wrapper {
-  position: relative;
-  height: 200px;
-  background-size: cover;
-  background-position: center;
-}
-
-.d-day-badge {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background-color: #007bff;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.card-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 20px;
-  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
-  color: white;
-}
-
-.trip-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0 0 4px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.trip-date {
-  font-size: 14px;
-  margin: 0;
-  opacity: 0.9;
-}
-
-.card-footer {
-  padding: 16px;
-}
-
-.progress-bar-container {
-  height: 6px;
-  background-color: #eee;
-  border-radius: 3px;
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  background-color: #007bff;
-  border-radius: 3px;
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  color: #666;
-}
-
-.continue-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-/* Past Trips List */
-.past-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.past-card {
-  display: flex;
-  gap: 16px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  border: 1px solid #f0f0f0;
-  overflow: hidden;
-  height: 100px; /* Fixed height for consistency */
-}
-
-.past-card-image {
-  width: 100px;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-color: #eee;
-}
-
-.past-card-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-right: 16px;
-}
-
-.past-trip-title {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 6px;
-  color: #333;
-}
-
-.past-trip-date {
-  font-size: 13px;
-  color: #888;
-  margin: 0;
 }
 
 /* FAB */

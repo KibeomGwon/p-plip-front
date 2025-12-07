@@ -8,18 +8,22 @@
         </svg>
       </button>
       <h2 class="header-title">내가 쓴 글</h2>
-      <div class="header-spacer"></div>
+      <SortFilter v-model="sortOrder" />
     </div>
 
     <!-- Post List -->
     <div class="post-list-wrapper">
-      <FreeBoardList filterType="my-posts" />
+      <FreeBoardList filterType="my-posts" :sortOrder="sortOrder" />
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import FreeBoardList from '@/components/board/list/FreeBoardList.vue';
+import SortFilter from '@/components/common/SortFilter.vue';
+
+const sortOrder = ref('desc');
 </script>
 
 <style scoped>

@@ -121,6 +121,21 @@ import NavBar from '@/components/common/Navbar.vue';
   overscroll-behavior: contain;
 }
 
+.board-content::-webkit-scrollbar {
+  width: 6px;
+  background-color: transparent;
+}
+
+.board-content::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 3px;
+}
+
+.board-content:hover::-webkit-scrollbar-thumb,
+.board-content:active::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
 .bottom-nav {
   position: fixed;
   bottom: 0;
