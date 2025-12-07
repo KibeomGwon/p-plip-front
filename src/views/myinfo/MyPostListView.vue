@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import FreeBoardList from '@/components/common/FreeBoardList.vue';
+import FreeBoardList from '@/components/board/list/FreeBoardList.vue';
 </script>
 
 <style scoped>

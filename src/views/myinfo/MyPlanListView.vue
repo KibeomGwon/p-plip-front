@@ -162,7 +162,7 @@ const goToPlanDetail = (id) => {
   background: white;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
 }
 
 .header-title {

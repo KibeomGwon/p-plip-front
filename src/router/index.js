@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainView from '@/views/MainView.vue'
-import PlanView from '@/views/PlanView.vue'
+import PlanView from '@/views/attraction/PlanView.vue'
 import MyInfoView from '@/views/myinfo/MyInfoView.vue'
 import BoardView from '@/views/board/BoardListView.vue'
-import FreeBoardList from '@/components/common/FreeBoardList.vue'
+import FreeBoardList from '@/components/board/list/FreeBoardList.vue'
 import FreeBoardDetailView from '@/views/board/FreeBoardDetailView.vue'
 import NoticeBoardList from '@/components/board/list/NoticeBoardList.vue'
-import PlaceDetailView from '@/views/PlaceDetailView.vue'
+import PlaceDetailView from '@/views/attraction/PlaceDetailView.vue'
 import MyPlanListView from '@/views/myinfo/MyPlanListView.vue'
 import MyPostListView from '@/views/myinfo/MyPostListView.vue'
 
@@ -44,9 +44,24 @@ const router = createRouter({
       component: PlaceDetailView
     },
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/auth/LoginView.vue')
+    },
+    {
+      path: '/signup',
+      name: 'signup',
+      component: () => import('@/views/auth/SignupView.vue')
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: MyInfoView
+    },
+    {
+      path: '/profile/edit',
+      name: 'profile-edit',
+      component: () => import('@/views/myinfo/ProfileEditView.vue')
     },
     {
       path: '/board',

@@ -53,6 +53,9 @@
                 </svg>
                 <span>{{ post.comments }}</span>
               </div>
+              <button class="edit-btn" @click.stop="goToEdit(post.id)" v-if="filterType === 'my-posts'">
+                수정
+              </button>
             </div>
           </div>
         </div>
@@ -71,6 +74,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useFreeBoardStore } from '@/stores/freeboard';
 
 const props = defineProps({
   filterType: {
@@ -80,6 +84,7 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const store = useFreeBoardStore();
 const activeFilter = ref('popular');
 
 const goToWrite = () => {
@@ -89,67 +94,13 @@ const goToDetail = (id) => {
   router.push({ name: 'freeboard-detail', params: { id } });
 };
 
-const posts = ref([
-  {
-    id: 1,
-    title: '갑자기 떠난 강릉 바다 후기',
-    author: '탐험가 Alex',
-    avatarColor: '#E0C3A5',
-    likes: 128,
-    comments: 12,
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 2,
-    title: '즉흥적으로 들어간 카페가 인생 카페',
-    author: '카페인중독',
-    avatarColor: '#FFB7B2',
-    avatarImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    likes: 201,
-    comments: 35,
-    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 3,
-    title: '오늘 발견한 동네 숨은 맛집',
-    author: '맛잘알',
-    avatarColor: '#E2F0CB',
-    avatarImage: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    likes: 99,
-    comments: 23,
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 4,
-    title: '나만 알고 싶은 서울 야경 스팟',
-    author: '탐험가 Alex',
-    avatarColor: '#C7CEEA',
-    likes: 87,
-    comments: 9,
-    image: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 5,
-    title: '계획 없이 온 제주도 3일차',
-    author: '제주앓이',
-    avatarColor: '#FFDAC1',
-    likes: 42,
-    comments: 5,
-    image: 'https://images.unsplash.com/photo-1542332205-4da5d5d19266?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 6,
-    title: '퇴근 후 급번개로 한강 치맥',
-    author: '칼퇴요정',
-    avatarColor: '#B5EAD7',
-    likes: 155,
-    comments: 18,
-    image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  }
-]);
+const goToEdit = (id) => {
+  router.push({ name: 'freeboard-write', query: { id } });
+};
 
 const displayPosts = computed(() => {
-  let filtered = posts.value;
+  // TODO: filterType이 my-posts일 때는 사용자 작성 게시판 리스트 api 사용, 아니면 게시판 리스트 api 사용
+  let filtered = store.freeBoards;
   
   if (props.filterType === 'my-posts') {
     filtered = filtered.filter(post => post.author === '탐험가 Alex');
@@ -325,5 +276,24 @@ const displayPosts = computed(() => {
 
 .write-fab:active {
   transform: scale(0.95);
+}
+
+.edit-btn {
+  margin-left: auto;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.edit-btn:hover {
+  background-color: #e9ecef;
+  color: #333;
+  border-color: #dee2e6;
 }
 </style>
