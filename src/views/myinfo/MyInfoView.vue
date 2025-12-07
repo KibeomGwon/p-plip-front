@@ -37,7 +37,7 @@
       <div class="divider"></div>
 
       <!-- Menu List -->
-      <div class="menu-section">
+      <div class="menu-section" style="margin-bottom: 30px;">
         <h3 class="section-title">더보기</h3>
         <ul class="menu-list">
           <li class="menu-item" @click="$router.push({ name: 'my-posts' })">
@@ -52,7 +52,7 @@
               <path d="M9 18L15 12L9 6" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </li>
-          <li class="menu-item">
+          <li class="menu-item" @click="$router.push({ name: 'profile-edit' })">
             <div class="menu-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -78,6 +78,20 @@
           </li>
         </ul>
       </div>
+      <div class="divider"></div>
+
+      <!-- Login/Signup Buttons (Show only when NOT logged in) -->
+      <div v-if="!authStore.isLoggedIn">
+        <button class="login-btn" @click="$router.push({ name: 'login' })">
+          로그인
+        </button>
+        <button class="signup-btn" @click="goToSignup">회원가입</button>
+      </div>
+
+      <!-- Logout Button (Show only when logged in) -->
+      <button v-else class="logout-btn" @click="handleLogout">
+        로그아웃
+      </button>
     </div>
 
     <!-- Bottom Navigation -->
@@ -92,8 +106,28 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+
 import NavBar from '@/components/common/Navbar.vue';
 import ChatModal from '@/components/common/ChatModal.vue';
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+const goToSignup = () => {
+  console.log('Navigate to signup');
+  router.push({ name: 'signup' });
+};
+
+const handleLogout = () => {
+  const confirmLogout = confirm('로그아웃 하시겠습니까?');
+  if (confirmLogout) {
+    authStore.logout();
+    alert('로그아웃 되었습니다.');
+    router.push({ name: 'main' });
+  }
+};
 </script>
 
 <style scoped>
@@ -112,6 +146,8 @@ import ChatModal from '@/components/common/ChatModal.vue';
   overflow-y: auto;
   padding-bottom: 100px; /* Space for bottom nav */
 }
+
+/* Custom Scrollbar removed - handled globally */
 
 .profile-header {
   display: flex;
@@ -210,6 +246,63 @@ import ChatModal from '@/components/common/ChatModal.vue';
 }
 
 .action-btn:active {
+  transform: scale(0.98);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 16px;
+  background: #56B4E9; /* Slightly darker sky blue */
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(86, 180, 233, 0.3);
+  transition: transform 0.2s;
+  margin-bottom: 12px;
+}
+
+.login-btn:active {
+  transform: scale(0.98);
+}
+
+.signup-btn {
+  width: 100%;
+  padding: 16px;
+  background: #87CEEB; /* My Plan button color */
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.signup-btn:active {
+  transform: scale(0.98);
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 16px;
+  background: #FF8A80; /* Light Red */
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 12px rgba(255, 138, 128, 0.3);
+}
+
+.logout-btn:active {
   transform: scale(0.98);
 }
 

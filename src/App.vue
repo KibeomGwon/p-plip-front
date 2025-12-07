@@ -18,6 +18,8 @@ body {
   display: flex;
   justify-content: center;
 }
+
+/* Custom Scrollbar Global removed to restore native auto-hide behavior */
 </style>
 
 <style scoped>

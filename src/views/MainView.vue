@@ -122,9 +122,13 @@ const stopDrag = () => {
     const duration = Date.now() - startTime.value;
     if (isClick.value && duration < 300) {
         closeSheet();
+        return;
     }
-    // If it was a drag, we just stay at the new height.
-    // Removed the "close if < 200" logic to prioritize click-to-close preference.
+
+    // Close if height is less than 25% of screen
+    if (sheetHeight.value < window.innerHeight * 0.25) {
+        closeSheet();
+    }
 };
 </script>
 

@@ -74,16 +74,37 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import ImageCropper from '@/components/common/ImageCropper.vue';
+import { useFreeBoardStore } from '@/stores/freeboard';
 
 const router = useRouter();
+const route = useRoute();
+const store = useFreeBoardStore();
 
 const title = ref('');
 const content = ref('');
 const croppedImages = ref([]); // Array of { blob, url }
 const draggedIndex = ref(null);
+const isEditMode = ref(false);
+const editId = ref(null);
+
+onMounted(() => {
+  if (route.query.id) {
+    isEditMode.value = true;
+    editId.value = parseInt(route.query.id);
+    const post = store.freeBoards.find(p => p.id === editId.value);
+    if (post) {
+      title.value = post.title;
+      // Mock content since it's not in the list view data, or use description/title
+      content.value = post.content || post.title; 
+      if (post.image) {
+        croppedImages.value.push({ url: post.image });
+      }
+    }
+  }
+});
 
 const onDragStart = (index) => {
   draggedIndex.value = index;
@@ -132,20 +153,34 @@ const cancelCrop = () => {
 };
 
 const removeImage = (index) => {
-  URL.revokeObjectURL(croppedImages.value[index].url);
+  if (croppedImages.value[index].blob) {
+    URL.revokeObjectURL(croppedImages.value[index].url);
+  }
   croppedImages.value.splice(index, 1);
 };
 
 const submitPost = () => {
-  // Logic to submit post (e.g., API call)
-  console.log('Submitting post:', {
+  const postData = {
     title: title.value,
     content: content.value,
-    images: croppedImages.value
-  });
+    image: croppedImages.value.length > 0 ? croppedImages.value[0].url : null,
+    // Keep existing author info if editing, or default for new
+    author: isEditMode.value ? undefined : '탐험가 Alex',
+    avatarColor: isEditMode.value ? undefined : '#E0C3A5',
+    likes: isEditMode.value ? undefined : 0,
+    comments: isEditMode.value ? undefined : 0,
+  };
+
+  if (isEditMode.value) {
+    store.updateFreeBoard({ id: editId.value, ...postData });
+  } else {
+    store.addFreeBoard({
+      id: Date.now(), // Simple ID generation
+      ...postData
+    });
+  }
   
-  // Navigate back or to the new post
-  router.push({ name: 'freeboard' });
+  router.back();
 };
 </script>
 
@@ -211,6 +246,7 @@ const submitPost = () => {
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 8px;
+  padding-top: 8px;
 }
 
 .preview-item {

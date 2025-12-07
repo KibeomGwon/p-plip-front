@@ -1,30 +1,26 @@
 <template>
-  <div class="my-plan-list-container">
+  <AppPage class="my-plan-list-page">
     <!-- Header -->
-    <div class="header">
-      <button class="icon-btn back-btn" @click="$router.back()">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <h2 class="header-title">내 플랜</h2>
-      <div class="sort-wrapper">
-        <button class="icon-btn more-btn" @click="toggleSortMenu" title="정렬">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <line x1="4" y1="6" x2="20" y2="6" stroke="#333" stroke-width="2" stroke-linecap="round"/>
-            <line x1="8" y1="10" x2="16" y2="10" stroke="#333" stroke-width="2" stroke-linecap="round"/>
-            <line x1="4" y1="14" x2="20" y2="14" stroke="#333" stroke-width="2" stroke-linecap="round"/>
-            <line x1="8" y1="18" x2="16" y2="18" stroke="#333" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-        
-        <!-- Sort Dropdown -->
-        <div v-if="isSortMenuOpen" class="sort-menu">
-          <button class="sort-option" :class="{ active: sortOrder === 'desc' }" @click="setSortOrder('desc')">최신순</button>
-          <button class="sort-option" :class="{ active: sortOrder === 'asc' }" @click="setSortOrder('asc')">오래된순</button>
+    <AppHeader title="내 플랜">
+      <template #right>
+        <div class="sort-wrapper">
+          <button class="icon-btn more-btn" @click="toggleSortMenu" title="정렬">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="4" y1="6" x2="20" y2="6" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+              <line x1="8" y1="10" x2="16" y2="10" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+              <line x1="4" y1="14" x2="20" y2="14" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+              <line x1="8" y1="18" x2="16" y2="18" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          
+          <!-- Sort Dropdown -->
+          <div v-if="isSortMenuOpen" class="sort-menu">
+            <button class="sort-option" :class="{ active: sortOrder === 'desc' }" @click="setSortOrder('desc')">최신순</button>
+            <button class="sort-option" :class="{ active: sortOrder === 'asc' }" @click="setSortOrder('asc')">오래된순</button>
+          </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppHeader>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -53,13 +49,16 @@
         <p>플랜이 없습니다.</p>
       </div>
     </div>
-  </div>
+  </AppPage>
 </template>
 
 <script setup>
+
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import PlanItem from '@/components/my/PlanItem.vue';
+import AppHeader from '@/components/common/AppHeader.vue';
+import AppPage from '@/components/common/AppPage.vue';
 
 const router = useRouter();
 
@@ -139,40 +138,20 @@ onUnmounted(() => {
 });
 
 const goToPlanDetail = (id) => {
-  // Navigate to plan detail (to be implemented or reused)
-  console.log('Navigate to plan:', id);
-  // router.push({ name: 'plan-detail', params: { id } });
+  router.push({ name: 'todo-list', params: { id } });
 };
 </script>
 
 <style scoped>
-.my-plan-list-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: #f9f9f9;
+
+/* Container replaced by AppPage */
+.my-plan-list-page {
+  /* Inherits traits */
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  padding-top: calc(12px + env(safe-area-inset-top));
-  background: white;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.header-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-}
-
+/* Header Replaced */
 .icon-btn {
+  /* Only used for sort button now, kept structure */
   width: 40px;
   height: 40px;
   border: none;

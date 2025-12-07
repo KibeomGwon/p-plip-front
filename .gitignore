@@ -34,3 +34,8 @@ coverage
 
 # Vitest
 __screenshots__/
+
+# PWA
+sw.js
+workbox-*.js
+vite.config.js
