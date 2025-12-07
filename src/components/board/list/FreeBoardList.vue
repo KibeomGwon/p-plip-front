@@ -82,7 +82,7 @@ const displayPosts = computed(() => {
     filtered.sort((a, b) => {
       const dateA = new Date(a.date); // Assuming post has a date field
       const dateB = new Date(b.date);
-      return props.sortOrder === 'desc' ? dateB - dateA : dateA - b.date;
+      return props.sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
   } else {
     // Existing filter logic for 'all'
