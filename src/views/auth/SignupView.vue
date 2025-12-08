@@ -139,6 +139,7 @@ const handleSignup = () => {
   flex-direction: column;
   height: 100vh;
   background-color: white;
+  touch-action: none; /* Prevent whole page drag */
 }
 
 .header {
@@ -174,6 +175,8 @@ const handleSignup = () => {
   flex-direction: column;
   gap: 24px;
   overflow-y: auto;
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 
 .input-group {

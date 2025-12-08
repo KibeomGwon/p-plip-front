@@ -105,6 +105,24 @@ const saveProfile = () => {
   background-color: white; /* Override default gray from AppPage */
 }
 
+.profile-edit-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: white;
+  touch-action: none; /* Prevent whole page drag */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 /* Header Replaced */
 
 .save-btn {
@@ -123,6 +141,8 @@ const saveProfile = () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 
 .profile-image-section {

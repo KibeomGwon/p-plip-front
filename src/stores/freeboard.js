@@ -11,7 +11,8 @@ export const useFreeBoardStore = defineStore('freeboard', () => {
         avatarColor: '#E0C3A5',
         likes: 128,
         comments: 12,
-        image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+        image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        date: new Date(Date.now() - 1000 * 60 * 30).toISOString() // 30 mins ago
       },
       {
         id: 2,
@@ -21,7 +22,8 @@ export const useFreeBoardStore = defineStore('freeboard', () => {
         avatarImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
         likes: 201,
         comments: 35,
-        image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+        image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
       },
       {
         id: 3,
@@ -31,7 +33,8 @@ export const useFreeBoardStore = defineStore('freeboard', () => {
         avatarImage: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
         likes: 99,
         comments: 23,
-        image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+        image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        date: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() // 5 hours ago
       },
       {
         id: 4,
@@ -40,7 +43,8 @@ export const useFreeBoardStore = defineStore('freeboard', () => {
         avatarColor: '#C7CEEA',
         likes: 87,
         comments: 9,
-        image: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+        image: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString() // 2 days ago
       },
       {
         id: 5,
@@ -49,7 +53,8 @@ export const useFreeBoardStore = defineStore('freeboard', () => {
         avatarColor: '#FFDAC1',
         likes: 42,
         comments: 5,
-        image: 'https://images.unsplash.com/photo-1542332205-4da5d5d19266?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+        image: 'https://images.unsplash.com/photo-1542332205-4da5d5d19266?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString() // 5 days ago
       },
       {
         id: 6,
@@ -58,7 +63,8 @@ export const useFreeBoardStore = defineStore('freeboard', () => {
         avatarColor: '#B5EAD7',
         likes: 155,
         comments: 18,
-        image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+        image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString() // 10 days ago
       }
     ]);
 

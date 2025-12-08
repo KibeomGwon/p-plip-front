@@ -35,7 +35,7 @@ const post = ref({
   avatarColor: '#E0C3A5',
   likes: 128,
   content: '갑자기 바다가 보고 싶어서 떠난 강릉 여행! 날씨도 너무 좋고 바다 색깔도 너무 예뻤어요. 맛있는 커피도 마시고 힐링 제대로 하고 왔습니다. 다음에는 친구들이랑 같이 오고 싶네요.',
-  date: '2시간 전',
+  date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
   images: [
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1519046904884-53103b34b271?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
@@ -69,6 +69,7 @@ onMounted(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  touch-action: none; /* Prevent whole page drag */
 }
 
 .detail-header {
@@ -104,5 +105,7 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding-bottom: 40px;
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 </style>

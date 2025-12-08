@@ -56,6 +56,7 @@ const handleLogin = () => {
   flex-direction: column;
   height: 100vh;
   background-color: white;
+  touch-action: none; /* Prevent whole page drag */
 }
 
 .header {
@@ -90,6 +91,9 @@ const handleLogin = () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 
 .input-group {

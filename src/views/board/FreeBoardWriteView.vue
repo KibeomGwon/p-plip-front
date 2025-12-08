@@ -190,6 +190,7 @@ const submitPost = () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  touch-action: none; /* Prevent whole page drag */
 }
 
 .write-header {
@@ -235,6 +236,8 @@ const submitPost = () => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 
 .image-upload-section {
@@ -247,6 +250,7 @@ const submitPost = () => {
   overflow-x: auto;
   padding-bottom: 8px;
   padding-top: 8px;
+  touch-action: pan-x pan-y; /* Allow horizontal scroll and vertical page scroll */
 }
 
 .preview-item {

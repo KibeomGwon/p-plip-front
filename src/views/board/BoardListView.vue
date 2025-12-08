@@ -57,6 +57,7 @@ import NavBar from '@/components/common/Navbar.vue';
   background-color: #f8f9fa;
   display: flex;
   flex-direction: column;
+  touch-action: none; /* Prevent whole page drag */
 }
 
 .board-header {
@@ -116,6 +117,23 @@ import NavBar from '@/components/common/Navbar.vue';
   flex: 1;
   overflow-y: auto;
   padding-bottom: 80px; /* Space for bottom nav */
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
+}
+
+.board-content::-webkit-scrollbar {
+  width: 6px;
+  background-color: transparent;
+}
+
+.board-content::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 3px;
+}
+
+.board-content:hover::-webkit-scrollbar-thumb,
+.board-content:active::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .bottom-nav {

@@ -35,7 +35,7 @@ const post = ref({
   avatarColor: '#333',
   likes: 54,
   content: '안녕하세요, P-PliP 팀입니다. 더 나은 서비스를 위해 서버 점검이 진행될 예정입니다. 이용에 불편을 드려 죄송합니다.',
-  date: '2023.12.06',
+  date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
   images: [
     'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
   ],
@@ -67,6 +67,7 @@ onMounted(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  touch-action: none; /* Prevent whole page drag */
 }
 
 .detail-header {
@@ -102,5 +103,7 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding-bottom: 40px;
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 </style>

@@ -86,6 +86,8 @@ const places = ref([
   flex-direction: column;
   gap: 16px;
   padding-bottom: 80px; /* Space for NavBar */
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain; /* Prevent scroll chaining to parent */
 }
 
 .place-list::-webkit-scrollbar {

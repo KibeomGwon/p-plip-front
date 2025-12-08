@@ -11,6 +11,7 @@ body {
   display: flex;
   justify-content: center;
   min-height: 100vh;
+  overscroll-behavior: none; /* Prevent pull-to-refresh/bounce globally */
 }
 
 #app {

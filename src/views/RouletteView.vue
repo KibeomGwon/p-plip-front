@@ -272,6 +272,8 @@ const closeModal = () => {
   min-height: 100vh;
   background-color: #f8f9fa;
   padding-bottom: 80px;
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 
 .header {

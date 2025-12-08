@@ -139,6 +139,8 @@ const stopDrag = () => {
     height: 100vh;
     overflow: hidden;
     background-color: #f5f5f5;
+    overscroll-behavior: none; /* Prevent pull-to-refresh/bounce */
+    touch-action: none; /* Prevent default touch actions like scrolling the whole page */
 }
 
 .map-background {

@@ -24,16 +24,6 @@
         </div>
       </div>
 
-      <!-- Action Button -->
-      <button class="action-btn" @click="$router.push({ name: 'my-plans' })">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="btn-icon">
-          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M12 16L16 12L12 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M8 12H16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        내 플랜
-      </button>
-
       <div class="divider"></div>
 
       <!-- Menu List -->
@@ -138,6 +128,7 @@ const handleLogout = () => {
   background-color: white;
   display: flex;
   flex-direction: column;
+  touch-action: none; /* Prevent whole page drag */
 }
 
 .content-wrapper {
@@ -145,6 +136,8 @@ const handleLogout = () => {
   padding: 20px;
   overflow-y: auto;
   padding-bottom: 100px; /* Space for bottom nav */
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 
 /* Custom Scrollbar removed - handled globally */

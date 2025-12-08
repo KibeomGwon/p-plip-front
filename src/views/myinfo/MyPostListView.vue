@@ -8,18 +8,22 @@
         </svg>
       </button>
       <h2 class="header-title">내가 쓴 글</h2>
-      <div class="header-spacer"></div>
+      <SortFilter v-model="sortOrder" />
     </div>
 
     <!-- Post List -->
     <div class="post-list-wrapper">
-      <FreeBoardList filterType="my-posts" />
+      <FreeBoardList filterType="my-posts" :sortOrder="sortOrder" />
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import FreeBoardList from '@/components/board/list/FreeBoardList.vue';
+import SortFilter from '@/components/common/SortFilter.vue';
+
+const sortOrder = ref('desc');
 </script>
 
 <style scoped>
@@ -28,6 +32,7 @@ import FreeBoardList from '@/components/board/list/FreeBoardList.vue';
   flex-direction: column;
   height: 100vh;
   background-color: #f9f9f9;
+  touch-action: none; /* Prevent whole page drag */
 }
 
 .header {
@@ -69,5 +74,7 @@ import FreeBoardList from '@/components/board/list/FreeBoardList.vue';
 .post-list-wrapper {
   flex: 1;
   overflow-y: auto;
+  touch-action: pan-y; /* Allow vertical scrolling */
+  overscroll-behavior: contain;
 }
 </style>
