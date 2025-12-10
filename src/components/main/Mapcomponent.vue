@@ -96,10 +96,11 @@ const onLoadKakaoMap = (map) => {
   }
 
   if (window.kakao && window.kakao.maps) {
-    // Listeners removed: User requested "Fixed Location" mode. 
-    // Moving the map should NOT change the search origin or results.
-    // window.kakao.maps.event.addListener(map, 'dragend', () => fetchAttractions(true, false));
-    // window.kakao.maps.event.addListener(map, 'zoom_changed', () => fetchAttractions(true, false));
+    // Re-sort list when map is dragged (List always reflects distance from CURRENT VIEW)
+    window.kakao.maps.event.addListener(map, 'dragend', () => {
+        const center = map.getCenter();
+        sortMarkers(center.getLat(), center.getLng());
+    });
   }
 }
 
@@ -149,12 +150,9 @@ const fetchAttractions = (isReset = true, shouldCenter = false) => {
       markerList.value = [...markerList.value, ...list];
     }
     
-    // Sort by distance from FIXED User Location
-    markerList.value.sort((a, b) => {
-      const distA = getDistance(centerLat, centerLng, a.latitude, a.longitude);
-      const distB = getDistance(centerLat, centerLng, b.latitude, b.longitude);
-      return distA - distB;
-    });
+    // Sort by distance from Current Map Center (Visual center)
+    const currentCenter = mapRef.value.getCenter();
+    sortMarkers(currentCenter.getLat(), currentCenter.getLng());
 
     // Center map on the nearest result if requested
     if (shouldCenter && markerList.value.length > 0) {
@@ -162,13 +160,27 @@ const fetchAttractions = (isReset = true, shouldCenter = false) => {
       moveToLocation(nearest.latitude, nearest.longitude);
     }
 
-    emit('update-places', markerList.value);
+    // sortMarkers already emits update-places, but we might need it before moving?
+    // sortMarkers emits. So we don't need explicit emit here, or we can leave it?
+    // Let's rely on sortMarkers to emit.
   }).catch(error => {
     console.error(error);
   }).finally(() => {
     isLoading.value = false;
     emit('update-loading', false);
   });
+};
+
+const sortMarkers = (lat, lng) => {
+  if (!markerList.value || markerList.value.length === 0) return;
+  
+  markerList.value.sort((a, b) => {
+    const distA = getDistance(lat, lng, a.latitude, a.longitude);
+    const distB = getDistance(lat, lng, b.latitude, b.longitude);
+    return distA - distB;
+  });
+  
+  emit('update-places', [...markerList.value]);
 };
 
 const getDistance = (lat1, lng1, lat2, lng2) => {

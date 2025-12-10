@@ -50,23 +50,26 @@ const selectCategory = (id) => {
   const index = selectedCategories.value.indexOf(id);
   if (index === -1) {
     selectedCategories.value.push(id);
+  } else {
+    selectedCategories.value.splice(index, 1);
+  }
   console.log("Selected categories:", selectedCategories.value);
   
-  // Emit a copy of the array to ensure reactivity in parent/child components
   emit('select-category', [...selectedCategories.value]);
 };
 
 const startDrag = (e) => {
   isDown.value = true;
-  // Don't reset isDragging here immediately to false if it's used for click blocking? 
-  // Actually standard pattern: mousedown resets flag.
   isDragging.value = false;
-  startX.value = e.pageX - filterContainer.value.offsetLeft;
-  scrollLeft.value = filterContainer.value.scrollLeft;
+  
+  if (filterContainer.value) {
+    startX.value = e.pageX - filterContainer.value.offsetLeft;
+    scrollLeft.value = filterContainer.value.scrollLeft;
+  }
 };
 
 const onDrag = (e) => {
-  if (!isDown.value) return;
+  if (!isDown.value || !filterContainer.value) return;
   e.preventDefault();
   const x = e.pageX - filterContainer.value.offsetLeft;
   const walk = (x - startX.value) * 2; 
@@ -79,7 +82,6 @@ const onDrag = (e) => {
 
 const stopDrag = () => {
   isDown.value = false;
-  // Delay resetting isDragging to ensure click handler sees it as true if we just dragged
   setTimeout(() => {
     isDragging.value = false;
   }, 50); 
