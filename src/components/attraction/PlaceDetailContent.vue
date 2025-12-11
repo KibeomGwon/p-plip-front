@@ -2,7 +2,7 @@
   <div class="bottom-content-wrapper">
     <!-- Image Carousel -->
     <div class="image-carousel">
-      <div class="carousel-track" @scroll="onScroll" @wheel="onWheel">
+      <div ref="carouselTrack" class="carousel-track" @scroll="onScroll" @wheel="onWheel">
         <div v-for="(img, index) in place.images" :key="index" class="carousel-item">
           <img :src="img" alt="Place Image" class="place-image" />
         </div>
@@ -31,7 +31,7 @@ import { ref } from 'vue';
 import PlaceInfoCard from './PlaceInfoCard.vue';
 import PlaceActionButtons from './PlaceActionButtons.vue';
 
-defineProps({
+const props = defineProps({
   place: {
     type: Object,
     required: true,
@@ -57,10 +57,48 @@ const onScroll = (e) => {
   currentImageIndex.value = Math.round(scrollLeft / width);
 };
 
+const carouselTrack = ref(null);
+let isScrolling = false;
+
+const scrollToIndex = (index) => {
+  if (!carouselTrack.value) return;
+  const width = carouselTrack.value.clientWidth;
+  carouselTrack.value.scrollTo({
+    left: width * index,
+    behavior: 'smooth'
+  });
+};
+
 const onWheel = (e) => {
   e.preventDefault();
   e.stopPropagation();
-  e.currentTarget.scrollLeft += e.deltaY;
+  
+  if (isScrolling) return;
+  
+  // Threshold to ignore small accidental scrolls
+  if (Math.abs(e.deltaY) < 10) return;
+
+  isScrolling = true;
+  
+  // Use props.place.images (need to access props)
+  const totalImages = props.place.images ? props.place.images.length : 0;
+  
+  if (e.deltaY > 0) {
+    // Scroll down/right -> Next image
+    if (currentImageIndex.value < totalImages - 1) {
+      scrollToIndex(currentImageIndex.value + 1);
+    }
+  } else {
+    // Scroll up/left -> Prev image
+    if (currentImageIndex.value > 0) {
+      scrollToIndex(currentImageIndex.value - 1);
+    }
+  }
+
+  // Cooldown
+  setTimeout(() => {
+    isScrolling = false;
+  }, 500);
 };
 </script>
 
