@@ -3,18 +3,19 @@ import { defineStore } from 'pinia';
 
 export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = ref(false);
-  const user = ref(null);
+  const accesstToken = ref(null);
 
   const login = (userData) => {
     isLoggedIn.value = true;
-    user.value = userData;
+    accesstToken.value = userData;
     // Persist to localStorage if needed, but for now just state
   };
 
   const logout = () => {
     isLoggedIn.value = false;
-    user.value = null;
+    accesstToken.value = null;
+    localStorage.removeItem('accessToken');
   };
 
-  return { isLoggedIn, user, login, logout };
-});
+  return { isLoggedIn, accesstToken, login, logout };
+}, { persist: true });

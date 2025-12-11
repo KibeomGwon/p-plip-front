@@ -8,59 +8,140 @@
     </div>
     
     <div class="place-list" ref="scrollContainer">
-      <div v-for="place in places" :key="place.id" class="place-card">
-        <div class="place-image" :style="{ backgroundImage: `url(${place.image})` }"></div>
+      <div v-for="place in visiblePlaces" :key="place.no" class="place-card" @click="onCardClick(place)">
+        <div class="place-image" :style="{ backgroundImage: `url(${place.firstImage1 || place.firstImage2 || 'https://via.placeholder.com/80'})` }"></div>
         <div class="place-info">
-          <h3 class="place-name">{{ place.name }}</h3>
-          <p class="place-desc">{{ place.description }}</p>
-          <button class="detail-btn" @click="goToDetail(place.id)">자세히 보기</button>
+          <h3 class="place-name">{{ place.title }}</h3>
+          <p class="place-desc">{{ place.addr1 || place.addr2 || '주소 정보 없음' }}</p>
+          <button class="detail-btn" @click.stop="goToDetail(place.no)">자세히 보기</button>
         </div>
       </div>
+      <!-- Loading Indicator -->
+      <div v-if="isLoading" class="loading-indicator">
+        <div class="spinner"></div>
+      </div>
+      <!-- Sentinel for Infinite Scroll -->
+      <div ref="sentinel" class="sentinel"></div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 
+const props = defineProps({
+  places: {
+    type: Array,
+    default: () => []
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
+  }
+});
+
+import { computed, watch, nextTick } from 'vue';
+
 const router = useRouter();
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'load-more', 'move-map']);
+// ... (rest is same)
+
+// In template:
+/*
+      <div v-if="isLoading" class="loading-indicator">
+        <div class="spinner"></div> Loading...
+      </div>
+*/
+
 const listContainer = ref(null);
+const sentinel = ref(null);
+let observer = null;
+const visibleCount = ref(10);
+const visiblePlaces = computed(() => {
+  return props.places.slice(0, visibleCount.value);
+});
+
+const resetList = () => {
+  visibleCount.value = 10;
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTop = 0;
+  }
+};
+
+defineExpose({ resetList });
+
+// Removed automatic watcher to prevent unwanted resets on partial data updates.
+// Reset is now manually triggered via parent.
 
 const goToDetail = (id) => {
   router.push({ name: 'place-detail', params: { id } });
 };
+
+const onCardClick = (place) => {
+  emit('move-map', place);
+};
+
 const scrollContainer = ref(null);
+const isIntersecting = ref(false);
 
+onMounted(() => {
+  observer = new IntersectionObserver((entries) => {
+    isIntersecting.value = entries[0].isIntersecting;
+    if (isIntersecting.value) {
+      processInfiniteScroll();
+    }
+  }, {
+    root: scrollContainer.value,
+    rootMargin: '200px',
+    threshold: 0.1
+  });
 
-
-const places = ref([
-  {
-    id: 1,
-    name: '카페 아늑',
-    description: '조용한 분위기에서 즐기는 스페셜티 커피',
-    image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
-  },
-  {
-    id: 2,
-    name: '하늘공원',
-    description: '도시 전경을 한눈에 볼 수 있는 휴식처',
-    image: 'https://images.unsplash.com/photo-1596436889106-be35e843f974?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
-  },
-  {
-    id: 3,
-    name: '국립현대미술관',
-    description: '다양한 현대 미술 작품을 감상할 수 있는 곳',
-    image: 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
-  },
-  {
-    id: 4,
-    name: '경복궁',
-    description: '조선 시대의 역사를 느낄 수 있는 고궁',
-    image: 'https://images.unsplash.com/photo-1548115184-bc6544d06a58?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
+  if (sentinel.value) {
+    observer.observe(sentinel.value);
   }
-]);
+});
+
+const processInfiniteScroll = async () => {
+  if (props.isLoading) return;
+
+  if (visibleCount.value < props.places.length) {
+    // Load local data
+    visibleCount.value += 20;
+    
+    // Check if we need to load MORE immediately
+    await nextTick();
+    if (!sentinel.value || !scrollContainer.value) return;
+
+    const sentinelRect = sentinel.value.getBoundingClientRect();
+    const containerRect = scrollContainer.value.getBoundingClientRect();
+
+    // If sentinel is still within view (with buffer), load more
+    if (sentinelRect.top < containerRect.bottom + 200) {
+      processInfiniteScroll();
+    }
+  } else {
+    emit('load-more');
+  }
+};
+
+watch(() => props.isLoading, (newVal) => {
+  if (!newVal) {
+    nextTick(() => {
+       if (sentinel.value && scrollContainer.value) {
+         const sentinelRect = sentinel.value.getBoundingClientRect();
+         const containerRect = scrollContainer.value.getBoundingClientRect();
+         if (sentinelRect.top < containerRect.bottom + 200) {
+           processInfiniteScroll();
+         }
+       }
+    });
+  }
+});
+
+onUnmounted(() => {
+  if (observer) observer.disconnect();
+});
 </script>
 
 <style scoped>
@@ -88,6 +169,12 @@ const places = ref([
   padding-bottom: 80px; /* Space for NavBar */
   touch-action: pan-y; /* Allow vertical scrolling */
   overscroll-behavior: contain; /* Prevent scroll chaining to parent */
+}
+
+.sentinel {
+  height: 20px;
+  width: 100%;
+  border: 1px solid transparent; /* Ensure it takes space */
 }
 
 .place-list::-webkit-scrollbar {
@@ -185,5 +272,26 @@ const places = ref([
 
 .detail-btn:hover {
   background: #0056b3;
+}
+
+.loading-indicator {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

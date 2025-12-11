@@ -1,12 +1,13 @@
 <template>
   <div class="map-container">
-    <KakaoMap :lat="coordinate.lat" :lng="coordinate.lng" :draggable="true" width="100%" height="100%">
+    <KakaoMap :lat="coordinate.lat" :lng="coordinate.lng" :draggable="true" width="100%" height="100%" @onLoadKakaoMap="onLoadKakaoMap">
       <KakaoMapMarker 
         v-for="marker in markerList" 
-        :key="marker.key"
-        :lat="marker.lat" 
-        :lng="marker.lng"
+        :key="marker.no"
+        :lat="marker.latitude" 
+        :lng="marker.longitude"
         :clickable="true"
+        :title="marker.title"
         @onLoadKakaoMapMarker="onLoadMarker($event, marker)"
         @onClickKakaoMapMarker="onClickMarker(marker)"
       />
@@ -22,9 +23,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onDeactivated, watch } from 'vue';
 import { KakaoMap, KakaoMapMarker } from 'vue3-kakao-maps';
 import PlaceDetailSheet from '@/components/attraction/PlaceDetailSheet.vue';
+import { attractionApi } from '@/api/attraction';
+
+const props = defineProps({
+  contentType: {
+    type: Array,
+    default: () => []
+  },
+  searchQuery: {
+    type: String,
+    default: ''
+  },
+  searchRadius: {
+    type: Number,
+    default: 0 // 0 means use dynamic zoom-based radius, or handle logic
+  }
+});
+
+const emit = defineEmits(['update-places', 'update-loading', 'reset-list']);
 
 const coordinate = {
   lat: 33.450701,
@@ -32,47 +51,210 @@ const coordinate = {
 };
 
 const selectedPlace = ref(null);
+const mapRef = ref(null);
+const markerList = ref([]);
+const pageNum = ref(1);
+const isLoading = ref(false);
+const isLastPage = ref(false);
 
-const markerList = ref([
-  {
-    key: 1,
-    lat: 33.450701,
-    lng: 126.570667,
-    name: '카카오 스페이스 닷원',
-    description: '제주도에 위치한 카카오 본사입니다. 아름다운 건축물과 자연이 어우러진 공간입니다.',
-    images: [
-      'https://images.unsplash.com/photo-1519046904884-53103b34b271?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-    ],
-    tags: ['IT성지', '제주여행', '건축미']
-  },
-  {
-    key: 2,
-    lat: 33.450936,
-    lng: 126.569477,
-    name: '제주 첨단과학기술단지',
-    description: '다양한 IT 기업들이 모여있는 제주의 실리콘밸리입니다.',
-    images: [
-      'https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-    ],
-    tags: ['비즈니스', '과학기술', '혁신']
-  },
-  {
-    key: 3,
-    lat: 33.451393,
-    lng: 126.570738,
-    name: '즐거운 산책로',
-    description: '가볍게 걷기 좋은 산책로입니다. 제주의 맑은 공기를 마시며 힐링하세요.',
-    images: [
-      'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-    ],
-    tags: ['산책', '힐링', '자연']
+// Watchers for filters
+watch(() => [props.contentType, props.searchQuery, props.searchRadius], () => {
+  console.log("MapComponent: Filters changed");
+  fetchAttractions(true, true); // Reset and Center
+}, { deep: true });
+
+const userLocation = ref({ lat: 33.450701, lng: 126.570667 });
+
+const onLoadKakaoMap = (map) => {
+  console.log("on load and call api");
+  mapRef.value = map;
+  initialLevel.value = map.getLevel();
+
+  // Try to get user's current location
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      
+      console.log(`User stored location: ${lat}, ${lng}`);
+      userLocation.value = { lat, lng };
+      
+      // Move map to user location initially
+      const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
+      map.setCenter(moveLatLon);
+      
+      // Fetch data based on this fixed location
+      fetchAttractions(true, false);
+    }, (err) => {
+      console.error("Geolocation failed:", err);
+      // Fallback to default location fetch
+      fetchAttractions(true, false);
+    });
+  } else {
+    // Fallback if no geolocation support
+    fetchAttractions(true, false);
   }
-]);
 
-const onClickMarker = (marker) => {
+  if (window.kakao && window.kakao.maps) {
+    // Re-sort list when map is dragged (List always reflects distance from CURRENT VIEW)
+    window.kakao.maps.event.addListener(map, 'dragend', () => {
+        const center = map.getCenter();
+        sortMarkers(center.getLat(), center.getLng());
+    });
+  }
+}
+
+const fetchAttractions = (isReset = true, shouldCenter = false) => {
+  if (!mapRef.value || isLoading.value) return;
+  if (!isReset && isLastPage.value) return;
+  
+  isLoading.value = true;
+  emit('update-loading', true);
+  
+  // Use FIXED User Location for search origin
+  const centerLat = userLocation.value.lat;
+  const centerLng = userLocation.value.lng;
+  const level = mapRef.value.getLevel();
+  
+  // Use explicit search radius if provided (> 0), otherwise calculate from zoom level
+  const radius = props.searchRadius > 0 
+    ? props.searchRadius 
+    : Math.floor(100 * Math.pow(2, level - 1));
+  
+  if (isReset) {
+    pageNum.value = 1;
+    isLastPage.value = false;
+    markerList.value = []; // Clear data immediately
+    emit('reset-list');
+  } else {
+    pageNum.value++;
+  }
+
+  console.log(`Fetching attractions (Page ${pageNum.value}) for Fixed Loc: ${centerLat}, ${centerLng}, Radius: ${radius}m`);
+
+  attractionApi.getAttractionsBySearch(
+    props.searchQuery, 
+    centerLat, 
+    centerLng, 
+    pageNum.value, 
+    10, 
+    radius, 
+    props.contentType.length > 0 ? props.contentType.join(',') : null
+  ).then(response => {
+    const list = response.list || [];
+    isLastPage.value = !response.next;
+
+    if (isReset) {
+      markerList.value = list;
+    } else {
+      markerList.value = [...markerList.value, ...list];
+    }
+    
+    // Sort by distance from Current Map Center (Visual center)
+    const currentCenter = mapRef.value.getCenter();
+    sortMarkers(currentCenter.getLat(), currentCenter.getLng());
+
+    // Center map on the nearest result if requested
+    if (shouldCenter && markerList.value.length > 0) {
+      const nearest = markerList.value[0];
+      moveToLocation(nearest.latitude, nearest.longitude);
+    }
+
+    // sortMarkers already emits update-places, but we might need it before moving?
+    // sortMarkers emits. So we don't need explicit emit here, or we can leave it?
+    // Let's rely on sortMarkers to emit.
+  }).catch(error => {
+    console.error(error);
+  }).finally(() => {
+    isLoading.value = false;
+    emit('update-loading', false);
+  });
+};
+
+const sortMarkers = (lat, lng) => {
+  if (!markerList.value || markerList.value.length === 0) return;
+  
+  markerList.value.sort((a, b) => {
+    const distA = getDistance(lat, lng, a.latitude, a.longitude);
+    const distB = getDistance(lat, lng, b.latitude, b.longitude);
+    return distA - distB;
+  });
+  
+  emit('update-places', [...markerList.value]);
+};
+
+const getDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1); 
+  const dLng = deg2rad(lng2 - lng1); 
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLng/2) * Math.sin(dLng/2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const d = R * c; // Distance in km
+  return d;
+}
+
+const deg2rad = (deg) => {
+  return deg * (Math.PI/180)
+}
+
+const loadMore = () => {
+  console.log("MapComponent: loadMore called");
+  fetchAttractions(false);
+};
+
+const initialLevel = ref(3);
+
+const moveToLocation = (lat, lng, zoomLevel = null) => {
+  if (mapRef.value && window.kakao && window.kakao.maps) {
+    const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
+    
+    // Pan first
+    mapRef.value.panTo(moveLatLon);
+
+    // Zoom after a delay to allow pan to start/smoothly blend
+    if (zoomLevel !== null) {
+      setTimeout(() => {
+        mapRef.value.setLevel(zoomLevel, { animate: true });
+      }, 300);
+    }
+  }
+};
+
+defineExpose({
+  loadMore,
+  moveToLocation
+});
+
+const onClickMarker = async (marker) => {
   console.log('Marker clicked:', marker);
-  selectedPlace.value = marker;
+  
+  // Center map on marker and reset zoom
+  moveToLocation(marker.latitude, marker.longitude, initialLevel.value);
+  
+  try {
+    const response = await attractionApi.getAttractionById(marker.no);
+    console.log('Detail response:', response);
+    
+    // Map API response to component props
+    // API: title, overview, firstImage1, firstImage2, tagNames
+    // Component: name, description, images, tags
+    const placeData = {
+      ...response, // Keep original data too just in case
+      name: response.title,
+      description: response.overview,
+      images: [response.firstImage1, response.firstImage2].filter(img => img), // Filter out empty/null images
+      tags: response.tagNames || [],
+      reviewCnt: response.reviewCnt
+    };
+    
+    selectedPlace.value = placeData;
+  } catch (error) {
+    console.error('Failed to fetch place details:', error);
+    // Fallback? or just alert
+  }
 };
 
 const onLoadMarker = (markerRef, markerItem) => {
@@ -86,6 +268,10 @@ const onLoadMarker = (markerRef, markerItem) => {
 const closeModal = () => {
   selectedPlace.value = null;
 };
+
+onDeactivated(() => {
+  closeModal();
+});
 </script>
 
 <style scoped>
@@ -120,4 +306,5 @@ const closeModal = () => {
     opacity: 1;
   }
 }
+
 </style>
