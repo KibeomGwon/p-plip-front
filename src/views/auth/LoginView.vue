@@ -29,6 +29,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { userApi } from '@/api/user';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
@@ -40,11 +41,16 @@ const goToSignup = () => {
   console.log('Navigate to signup');
   router.push({ name: 'signup' });
 };
-const handleLogin = () => {
+
+const handleLogin = async () => {
   console.log('Login with:', email.value, password.value);
-  // Implement login logic here
-  authStore.login({ email: email.value });
-  router.push({ name: 'main' }); // Navigate to home after login (mock)
+  userApi.login({ id: email.value, password: password.value })
+  .then(res => {
+    authStore.login( res.accessToken );
+    router.push({ name: 'main' });
+  }).catch(err => {
+    console.error(err);
+  });
 };
 
 

@@ -24,10 +24,10 @@
           <button 
             class="action-btn-small" 
             @click="sendCode" 
-            :disabled="isVerified || !email"
+            :disabled="isVerified || !email || isSendingCode"
             v-if="!isVerified"
           >
-            이메일 인증
+            {{ isSendingCode ? '전송중...' : '이메일 인증' }}
           </button>
         </div>
         <span v-if="isVerified" class="verified-text">확인완료</span>
@@ -55,9 +55,26 @@
         <input type="text" v-model="name" placeholder="이름을 입력하세요" class="input-field" />
       </div>
 
-      <div class="input-group">
+<div class="input-group">
         <label class="label">닉네임</label>
-        <input type="text" v-model="nickname" placeholder="닉네임을 입력하세요" class="input-field" />
+        <div class="email-input-wrapper">
+          <input 
+            type="text" 
+            v-model="nickname" 
+            placeholder="닉네임을 입력하세요" 
+            class="input-field email-field" 
+            :disabled="isNicknameChecked"
+          />
+          <button 
+            class="action-btn-small" 
+            @click="checkNickname" 
+            :disabled="isNicknameChecked || !nickname"
+            v-if="!isNicknameChecked"
+          >
+            중복확인
+          </button>
+        </div>
+        <span v-if="isNicknameChecked" class="verified-text">사용 가능한 닉네임입니다</span>
       </div>
 
       <div class="input-group">
@@ -70,14 +87,15 @@
         <textarea v-model="description" placeholder="자기소개를 입력하세요" class="input-field textarea-field"></textarea>
       </div>
 
-      <button class="signup-submit-btn" @click="handleSignup" :disabled="!isVerified">가입하기</button>
+      <button class="signup-submit-btn" @click="handleSignup" :disabled="!isVerified || !isNicknameChecked">가입하기</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { userApi } from '@/api/user';
 
 const router = useRouter();
 const email = ref('');
@@ -86,31 +104,78 @@ const name = ref('');
 const nickname = ref('');
 const birthdate = ref('');
 const description = ref('');
+const code = ref('');
 
 // Verification State
 const isCodeSent = ref(false);
+const isSendingCode = ref(false);
 const verificationCode = ref('');
 const isVerified = ref(false);
 
+// Nickname Check State
+const isNicknameChecked = ref(false);
+
+watch(nickname, (newValue) => {
+  if (isNicknameChecked.value) {
+    isNicknameChecked.value = false;
+  }
+});
+
+const checkNickname = () => {
+  if (!nickname.value) return;
+  userApi.nicknameDupCheck({ nickname: nickname.value })
+    .then(() => {
+      alert('사용 가능한 닉네임입니다.');
+      isNicknameChecked.value = true;
+    })
+    .catch(err => {
+      console.error(err);
+      if (err.response && err.response.status === 409) {
+         alert('이미 사용 중인 닉네임입니다.');
+      } else {
+         alert('닉네임 중복 확인 중 오류가 발생했습니다.');
+      }
+    });
+};
+
 const sendCode = () => {
-  if (!email.value) return;
+  if (!email.value || isSendingCode.value) return;
   console.log('Sending code to:', email.value);
-  // Mock sending code
-  // TODO: email 중복확인 api 호출 -> email 중복시 alert | email 중복아닐시 인증번호 전송 api 호출
-  alert(`인증 코드가 ${email.value}로 전송되었습니다.`);
-  isCodeSent.value = true;
+  
+  isSendingCode.value = true;
+  userApi.sendEmailCheckCode({email: email.value})
+  .then(res => {
+    alert('인증코드가 전송되었습니다.');
+    isCodeSent.value = true;
+  })
+  .catch(err => {
+    console.error(err);
+    alert('인증코드 전송에 실패했습니다.');
+  })
+  .finally(() => {
+    isSendingCode.value = false;
+  });
 };
 
 const verifyCode = () => {
   console.log('Verifying code:', verificationCode.value);
-  // Mock verification
-  if (verificationCode.value === '1234') { // Mock code
+  userApi.checkEmailCode({email: email.value, code: verificationCode.value})
+  .then(res => {
+    if (!res.success) {
+      alert('인증코드가 일치하지 않습니다.');
+      return;
+    }
+
+    alert('이메일 인증이 완료되었습니다.');
+
+    code.value = res.verificationToken;
+
     isVerified.value = true;
     isCodeSent.value = false;
-    alert('이메일 인증이 완료되었습니다.');
-  } else {
-    alert('인증 코드가 올바르지 않습니다. (테스트 코드: 1234)');
-  }
+  })
+  .catch(err => {
+    console.error(err);
+  })
 };
 
 const handleSignup = () => {
@@ -119,17 +184,28 @@ const handleSignup = () => {
     return;
   }
   
-  console.log('Signup with:', {
+  if (!isNicknameChecked.value) {
+    alert('닉네임 중복 확인을 해주세요.');
+    return;
+  }
+
+  userApi.register({
     email: email.value,
     password: password.value,
     name: name.value,
     nickname: nickname.value,
-    birthdate: birthdate.value,
-    description: description.value
-  });
-  // Implement signup logic here
-  alert('회원가입이 완료되었습니다.');
-  router.push({ name: 'login' });
+    birth: birthdate.value,
+    description: description.value,
+    validationToken: code.value
+  })
+  .then(res => {
+    alert('회원가입이 완료되었습니다.');
+    router.push({ name: 'login' });
+  })
+  .catch(err => {
+    console.error(err);
+  })
+  
 };
 </script>
 

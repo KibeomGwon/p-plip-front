@@ -11,7 +11,10 @@ console.log('Kakao Map Key:', VITE_KAKAO_MAP_KEY ? 'Loaded' : 'Missing');
 
 const app = createApp(App)
 
-const pinia = createPinia();
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
 app.use(router)
