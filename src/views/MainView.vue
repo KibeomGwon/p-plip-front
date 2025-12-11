@@ -2,14 +2,22 @@
     <div class="main-container">
         <!-- Map Background -->
         <div class="map-background">
-            <MapComponent />
+            <MapComponent 
+                ref="mapComp" 
+                :contentType="selectedContentType"
+                :searchQuery="searchQuery"
+                :searchRadius="searchRadius"
+                @update-places="updatePlaces" 
+                @update-loading="updateLoading"
+                @reset-list="onResetList"
+            />
         </div>
 
         <!-- Top Overlay: Search & Filter -->
         <div class="top-overlay">
-            <SearchBar />
+            <SearchBar @search="onSearch" />
             <div class="filter-wrapper">
-                <CategoryFilter />
+                <CategoryFilter @select-category="updateCategory" />
             </div>
         </div>
 
@@ -32,7 +40,12 @@
                 <div class="sheet-handle"></div>
             </div>
             <div class="sheet-content">
-                <PlaceList @close="closeSheet" />
+                <PlaceList 
+                    :places="places" 
+                    @close="closeSheet" 
+                    @load-more="fetchNextPage"
+                    @move-map="moveMapToPlace"
+                />
             </div>
         </div>
 
@@ -46,6 +59,12 @@
     </div>
 </template>
 
+<script>
+export default {
+    name: 'MainView'
+}
+</script>
+
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import MapComponent from '@/components/main/Mapcomponent.vue';
@@ -55,8 +74,64 @@ import PlaceList from '@/components/main/PlaceList.vue';
 import NavBar from '@/components/common/Navbar.vue';
 import ChatModal from '@/components/common/ChatModal.vue';
 
+import { attractionApi } from '@/api/attraction';
+
 const isListOpen = ref(false);
 const sheetHeight = ref(window.innerHeight * 0.6); // Initial height 60%
+const mapComp = ref(null);
+const placeList = ref(null); // Ref for PlaceList component
+const places = ref([]);
+const selectedContentType = ref([]);
+const isLoading = ref(false);
+const searchQuery = ref('');
+const searchRadius = ref(0); // Default 0 (Use dynamic zoom initially)
+
+const onSearch = ({ query, dist }) => {
+    console.log(`MainView: Search triggered. Query: "${query}", Dist: ${dist}km`);
+    searchQuery.value = query;
+    if (dist === -1) {
+        searchRadius.value = 20000000; // 20,000 km (Earth half-circumference approx) - effectively unlimited
+    } else {
+        searchRadius.value = dist * 1000;
+    }
+};
+
+const updateCategory = (categories) => {
+    console.log('MainView: Categories selected:', categories);
+    selectedContentType.value = categories;
+};
+
+const updatePlaces = (newPlaces) => {
+    console.log('MainView received places:', newPlaces.length);
+    places.value = newPlaces;
+};
+
+const updateLoading = (loading) => {
+    isLoading.value = loading;
+};
+
+const onResetList = () => {
+    console.log('MainView: Resetting place list scroll');
+    places.value = []; // Clear data immediately
+    if (placeList.value) {
+        placeList.value.resetList();
+    }
+};
+
+const fetchNextPage = () => {
+    console.log("MainView: fetchNextPage triggered. MapComp ref present?", !!mapComp.value);
+    if (mapComp.value) {
+        mapComp.value.loadMore();
+    }
+};
+
+const moveMapToPlace = (place) => {
+    if (mapComp.value) {
+        mapComp.value.moveToLocation(place.latitude, place.longitude);
+        // Optional: Close sheet partially to show map?
+        // sheetHeight.value = window.innerHeight * 0.3; 
+    }
+};
 
 // Drag Logic
 const isDragging = ref(false);

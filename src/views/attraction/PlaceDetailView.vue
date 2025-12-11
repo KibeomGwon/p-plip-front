@@ -12,7 +12,14 @@
     </div>
 
     <!-- Bottom Content Wrapper -->
-    <PlaceDetailContent :place="place" />
+    <PlaceDetailContent 
+      v-if="place" 
+      :place="place" 
+      :visible="true" 
+    />
+    <div v-else class="loading-state">
+      <p>정보를 불러오는 중입니다...</p>
+    </div>
   </div>
 </template>
 
@@ -20,23 +27,29 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import PlaceDetailContent from '@/components/attraction/PlaceDetailContent.vue';
+import { attractionApi } from '@/api/attraction';
 
 const route = useRoute();
-const place = ref({
-  id: 1,
-  name: '영도 해녀촌',
-  description: '신선한 해산물을 맛볼 수 있는 곳. 바다 바로 앞에서 낭만적인 식사를 즐겨보세요.',
-  images: [
-    'https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1566371486490-560ded23b5e4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-  ],
-  tags: ['오션뷰', '감성맛집', '즉흥여행']
-});
+const place = ref(null);
 
 // In a real app, fetch place details using route.params.id
 onMounted(() => {
   console.log('Place ID:', route.params.id);
   // Fetch logic here
+  attractionApi.getAttractionById(route.params.id).then((response) => {
+    // Map API response to component props
+    const placeData = {
+      ...response,
+      name: response.title,
+      description: response.overview,
+      images: [response.firstImage1, response.firstImage2].filter(img => img),
+      tags: response.tagNames || [],
+      reviewCnt: response.reviewCnt
+    };
+    place.value = placeData;
+  }).catch(err => {
+    console.error("Failed to fetch place details:", err);
+  });
 });
 </script>
 
@@ -86,5 +99,14 @@ onMounted(() => {
   justify-content: center;
   cursor: pointer;
   padding: 0;
+}
+
+.loading-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
 }
 </style>
