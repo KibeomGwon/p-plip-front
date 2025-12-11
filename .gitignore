@@ -41,3 +41,5 @@ __screenshots__/
 sw.js
 workbox-*.js
 vite.config.js
+
+dev-dist/sw.js
