@@ -10,10 +10,11 @@
                 @update-places="updatePlaces" 
                 @update-loading="updateLoading"
                 @reset-list="onResetList"
+                @update-center="updateMapCenter"
             />
         </div>
 
-        <!-- Top Overlay: Search & Filter -->
+        <!-- TopOverlay: Search & Filter -->
         <div class="top-overlay">
             <SearchBar @search="onSearch" />
             <div class="filter-wrapper">
@@ -21,8 +22,8 @@
             </div>
         </div>
 
-        <!-- Toggle Button (Visible when list is closed) -->
-        <button v-if="!isListOpen" class="list-toggle-btn" @click="openSheet">
+        <!-- Toggle Button (Visible when list is closed and has data) -->
+        <button v-if="!isListOpen && places.length > 0" class="list-toggle-btn" @click="openSheet">
             목록 보기
         </button>
 
@@ -41,6 +42,7 @@
             </div>
             <div class="sheet-content">
                 <PlaceList 
+                    ref="placeList"
                     :places="places" 
                     @close="closeSheet" 
                     @load-more="fetchNextPage"
@@ -55,7 +57,11 @@
         </div>
 
         <!-- Chat Modal -->
-        <ChatModal />
+        <ChatModal 
+            :lat="currentMapCenter.lat" 
+            :lng="currentMapCenter.lng"
+            @ai-response="handleAiResponse"
+        />
     </div>
 </template>
 
@@ -74,35 +80,36 @@ import PlaceList from '@/components/main/PlaceList.vue';
 import NavBar from '@/components/common/Navbar.vue';
 import ChatModal from '@/components/common/ChatModal.vue';
 
-import { attractionApi } from '@/api/attraction';
+// No direct import needed for attractionApi here if using MapComponent's logic, 
+// but used for tracking logic if needed.
 
 const isListOpen = ref(false);
 const sheetHeight = ref(window.innerHeight * 0.6); // Initial height 60%
 const mapComp = ref(null);
-const placeList = ref(null); // Ref for PlaceList component
+const placeList = ref(null);
 const places = ref([]);
 const selectedContentType = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
-const searchRadius = ref(0); // Default 0 (Use dynamic zoom initially)
+const searchRadius = ref(0);
+
+const currentMapCenter = ref({ lat: 33.450701, lng: 126.570667 });
 
 const onSearch = ({ query, dist }) => {
     console.log(`MainView: Search triggered. Query: "${query}", Dist: ${dist}km`);
     searchQuery.value = query;
     if (dist === -1) {
-        searchRadius.value = 20000000; // 20,000 km (Earth half-circumference approx) - effectively unlimited
+        searchRadius.value = 20000000; 
     } else {
         searchRadius.value = dist * 1000;
     }
 };
 
 const updateCategory = (categories) => {
-    console.log('MainView: Categories selected:', categories);
     selectedContentType.value = categories;
 };
 
 const updatePlaces = (newPlaces) => {
-    console.log('MainView received places:', newPlaces.length);
     places.value = newPlaces;
 };
 
@@ -111,15 +118,45 @@ const updateLoading = (loading) => {
 };
 
 const onResetList = () => {
-    console.log('MainView: Resetting place list scroll');
-    places.value = []; // Clear data immediately
+    places.value = [];
     if (placeList.value) {
         placeList.value.resetList();
     }
 };
 
+const updateMapCenter = (center) => {
+    currentMapCenter.value = center;
+};
+
+const handleAiResponse = (data) => {
+    console.log("AI Response received in MainView:", data);
+    if (!data || data.length === 0) {
+        places.value = [];
+        closeSheet();
+        return;
+    }
+
+    // Update markers on Map
+    if (mapComp.value) {
+        mapComp.value.setMarkers(data);
+    }
+    
+    // Update local places list (though setMarkers emits update-places, we set it here too to be sure or redundant)
+    // MapComponent.setMarkers emits 'update-places', so updatePlaces will be called.
+    // places.value = data; // Redundant but safe logic would be rely on event.
+    // But since event loop, let's just wait for emit? 
+    // Actually mapComp emits updates triggers updatePlaces.
+
+    // Open sheet if closed
+    if (!isListOpen.value) {
+        // openSheet(); // Optional: User said "button appears", didn't strictly say "open list".
+        // "저 데이터가 없으면 Place List(목록보기 버튼)이 없어졌다가, 지도에 마커가 생길때 동시에 버튼이 보이도록해줘"
+        // It says "Show the button", not "Open the list".
+        // So I will just update data. Button visibility is handled by v-if.
+    }
+};
+
 const fetchNextPage = () => {
-    console.log("MainView: fetchNextPage triggered. MapComp ref present?", !!mapComp.value);
     if (mapComp.value) {
         mapComp.value.loadMore();
     }
@@ -128,12 +165,10 @@ const fetchNextPage = () => {
 const moveMapToPlace = (place) => {
     if (mapComp.value) {
         mapComp.value.moveToLocation(place.latitude, place.longitude);
-        // Optional: Close sheet partially to show map?
-        // sheetHeight.value = window.innerHeight * 0.3; 
     }
 };
 
-// Drag Logic
+// Drag Logic provided by existing code
 const isDragging = ref(false);
 const startY = ref(0);
 const startHeight = ref(0);
@@ -142,7 +177,6 @@ const isClick = ref(false);
 
 const openSheet = () => {
     isListOpen.value = true;
-    // Set default height at 60%
     sheetHeight.value = window.innerHeight * 0.6;
 };
 
@@ -152,7 +186,7 @@ const closeSheet = () => {
 
 const startDrag = (e) => {
     isDragging.value = true;
-    isClick.value = true; // Assume click initially
+    isClick.value = true;
     startTime.value = Date.now();
     startY.value = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
     startHeight.value = sheetHeight.value;
@@ -169,17 +203,14 @@ const onDrag = (e) => {
     const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
     const deltaY = startY.value - clientY; 
     
-    // If moved more than 5px, it's a drag, not a click
     if (Math.abs(deltaY) > 5) {
         isClick.value = false;
     }
 
     if (!isClick.value) {
-        // Drag Logic
         const newHeight = startHeight.value + deltaY;
         const maxHeight = window.innerHeight - 100;
         
-        // Allow resizing, but minimum reasonable height
         if (newHeight >= 100 && newHeight <= maxHeight) {
              sheetHeight.value = newHeight;
         }
@@ -193,14 +224,12 @@ const stopDrag = () => {
     window.removeEventListener('touchmove', onDrag);
     window.removeEventListener('touchend', stopDrag);
 
-    // If it was a click, close the sheet
     const duration = Date.now() - startTime.value;
     if (isClick.value && duration < 300) {
         closeSheet();
         return;
     }
 
-    // Close if height is less than 25% of screen
     if (sheetHeight.value < window.innerHeight * 0.25) {
         closeSheet();
     }
@@ -214,8 +243,8 @@ const stopDrag = () => {
     height: 100vh;
     overflow: hidden;
     background-color: #f5f5f5;
-    overscroll-behavior: none; /* Prevent pull-to-refresh/bounce */
-    touch-action: none; /* Prevent default touch actions like scrolling the whole page */
+    overscroll-behavior: none; 
+    touch-action: none;
 }
 
 .map-background {
@@ -223,7 +252,7 @@ const stopDrag = () => {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%; /* Full height */
+    height: 100%;
     z-index: 1;
 }
 
@@ -236,11 +265,11 @@ const stopDrag = () => {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    pointer-events: none; /* Allow clicks to pass through to map where not clicking children */
+    pointer-events: none;
 }
 
 .top-overlay > * {
-    pointer-events: auto; /* Re-enable pointer events for children */
+    pointer-events: auto;
 }
 
 .filter-wrapper {
@@ -266,10 +295,9 @@ const stopDrag = () => {
 
 .bottom-sheet {
     position: absolute;
-    bottom: calc(60px + env(safe-area-inset-bottom)); /* Height of NavBar + safe area */
+    bottom: calc(60px + env(safe-area-inset-bottom));
     left: 0;
     right: 0;
-    /* height is controlled by inline style */
     z-index: 20;
     border-radius: 20px 20px 0 0;
     overflow: hidden;
@@ -281,7 +309,7 @@ const stopDrag = () => {
 }
 
 .bottom-sheet.closed {
-    transform: translateY(110%); /* Move completely out including shadow */
+    transform: translateY(110%);
 }
 
 .sheet-handle-bar {
@@ -317,7 +345,6 @@ const stopDrag = () => {
     position: relative;
 }
 
-/* Deep selector to override PlaceList default styles to fit perfectly */
 :deep(.place-list-container) {
     box-shadow: none !important;
     border-radius: 0 !important;
@@ -338,3 +365,4 @@ const stopDrag = () => {
     border-top: 1px solid #eee;
 }
 </style>
+

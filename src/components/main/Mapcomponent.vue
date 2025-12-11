@@ -181,6 +181,7 @@ const sortMarkers = (lat, lng) => {
   });
   
   emit('update-places', [...markerList.value]);
+  emit('update-center', { lat, lng });
 };
 
 const getDistance = (lat1, lng1, lat2, lng2) => {
@@ -225,7 +226,21 @@ const moveToLocation = (lat, lng, zoomLevel = null) => {
 
 defineExpose({
   loadMore,
-  moveToLocation
+  moveToLocation,
+  getMapCenter: () => {
+    if (mapRef.value) {
+      const center = mapRef.value.getCenter();
+      return { lat: center.getLat(), lng: center.getLng() };
+    }
+    return userLocation.value;
+  },
+  setMarkers: (list) => {
+    markerList.value = list;
+    emit('update-places', [...markerList.value]);
+    if (list.length > 0) {
+        moveToLocation(list[0].latitude, list[0].longitude);
+    }
+  }
 });
 
 const onClickMarker = async (marker) => {
