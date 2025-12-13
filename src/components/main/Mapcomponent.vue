@@ -1,16 +1,17 @@
 <template>
   <div class="map-container">
-    <KakaoMap :lat="coordinate.lat" :lng="coordinate.lng" :draggable="true" width="100%" height="100%" @onLoadKakaoMap="onLoadKakaoMap">
-      <KakaoMapMarker 
-        v-for="marker in markerList" 
-        :key="marker.no"
-        :lat="marker.latitude" 
-        :lng="marker.longitude"
-        :clickable="true"
-        :title="marker.title"
-        @onLoadKakaoMapMarker="onLoadMarker($event, marker)"
-        @onClickKakaoMapMarker="onClickMarker(marker)"
-      />
+    <KakaoMap :lat="coordinate.lat" :lng="coordinate.lng" :draggable="true" width="100%" height="100%"
+      @onLoadKakaoMap="onLoadKakaoMap">
+      <!-- User Location Marker (Red) -->
+      <KakaoMapMarker :lat="userLocation.lat" :lng="userLocation.lng" :clickable="false" :image="{
+        imageSrc: 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
+        imageWidth: 64,
+        imageHeight: 69
+      }" />
+
+      <KakaoMapMarker v-for="marker in markerList" :key="marker.no" :lat="marker.latitude" :lng="marker.longitude"
+        :clickable="true" :title="marker.title" @onLoadKakaoMapMarker="onLoadMarker($event, marker)"
+        @onClickKakaoMapMarker="onClickMarker(marker)" />
     </KakaoMap>
 
     <!-- Place Detail Modal (Bottom Sheet) -->
@@ -43,7 +44,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update-places', 'update-loading', 'reset-list']);
+const emit = defineEmits(['update-places', 'update-loading', 'reset-list', 'update-center']);
 
 const coordinate = {
   lat: 33.450701,
@@ -63,12 +64,14 @@ watch(() => [props.contentType, props.searchQuery, props.searchRadius], () => {
   fetchAttractions(true, true); // Reset and Center
 }, { deep: true });
 
-// Auto-fit bounds when markerList changes
+// Auto-fit bounds when markerList changes - REMOVED per user request to keep map center fixed
+/*
 watch(() => markerList.value, (newMarkers) => {
-    if (newMarkers && newMarkers.length > 0) {
-        fitBoundsToMarkers(newMarkers);
-    }
+  if (newMarkers && newMarkers.length > 0) {
+    fitBoundsToMarkers(newMarkers);
+  }
 }, { deep: true });
+*/
 
 const userLocation = ref({ lat: 33.450701, lng: 126.570667 });
 
@@ -82,14 +85,17 @@ const onLoadKakaoMap = (map) => {
     navigator.geolocation.getCurrentPosition((position) => {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
-      
+
       console.log(`User stored location: ${lat}, ${lng}`);
       userLocation.value = { lat, lng };
-      
+
       // Move map to user location initially
       const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
       map.setCenter(moveLatLon);
-      
+
+      // Explicitly update parent immediately
+      emit('update-center', { lat, lng });
+
       // Fetch data based on this fixed location
       fetchAttractions(true, false);
     }, (err) => {
@@ -105,8 +111,8 @@ const onLoadKakaoMap = (map) => {
   if (window.kakao && window.kakao.maps) {
     // Re-sort list when map is dragged (List always reflects distance from CURRENT VIEW)
     window.kakao.maps.event.addListener(map, 'dragend', () => {
-        const center = map.getCenter();
-        sortMarkers(center.getLat(), center.getLng());
+      const center = map.getCenter();
+      sortMarkers(center.getLat(), center.getLng());
     });
   }
 }
@@ -114,20 +120,20 @@ const onLoadKakaoMap = (map) => {
 const fetchAttractions = (isReset = true, shouldCenter = false) => {
   if (!mapRef.value || isLoading.value) return;
   if (!isReset && isLastPage.value) return;
-  
+
   isLoading.value = true;
   emit('update-loading', true);
-  
+
   // Use FIXED User Location for search origin
   const centerLat = userLocation.value.lat;
   const centerLng = userLocation.value.lng;
   const level = mapRef.value.getLevel();
-  
+
   // Use explicit search radius if provided (> 0), otherwise calculate from zoom level
-  const radius = props.searchRadius > 0 
-    ? props.searchRadius 
+  const radius = props.searchRadius > 0
+    ? props.searchRadius
     : Math.floor(100 * Math.pow(2, level - 1));
-  
+
   if (isReset) {
     pageNum.value = 1;
     isLastPage.value = false;
@@ -140,12 +146,12 @@ const fetchAttractions = (isReset = true, shouldCenter = false) => {
   console.log(`Fetching attractions (Page ${pageNum.value}) for Fixed Loc: ${centerLat}, ${centerLng}, Radius: ${radius}m`);
 
   attractionApi.getAttractionsBySearch(
-    props.searchQuery, 
-    centerLat, 
-    centerLng, 
-    pageNum.value, 
-    10, 
-    radius, 
+    props.searchQuery,
+    centerLat,
+    centerLng,
+    pageNum.value,
+    10,
+    radius,
     props.contentType.length > 0 ? props.contentType.join(',') : null
   ).then(response => {
     const list = response.list || [];
@@ -156,7 +162,7 @@ const fetchAttractions = (isReset = true, shouldCenter = false) => {
     } else {
       markerList.value = [...markerList.value, ...list];
     }
-    
+
     // Sort by distance from Current Map Center (Visual center)
     const currentCenter = mapRef.value.getCenter();
     sortMarkers(currentCenter.getLat(), currentCenter.getLng());
@@ -173,33 +179,34 @@ const fetchAttractions = (isReset = true, shouldCenter = false) => {
 };
 
 const sortMarkers = (lat, lng) => {
+  emit('update-center', { lat, lng });
+
   if (!markerList.value || markerList.value.length === 0) return;
-  
+
   markerList.value.sort((a, b) => {
     const distA = getDistance(lat, lng, a.latitude, a.longitude);
     const distB = getDistance(lat, lng, b.latitude, b.longitude);
     return distA - distB;
   });
-  
+
   emit('update-places', [...markerList.value]);
-  emit('update-center', { lat, lng });
 };
 
 const getDistance = (lat1, lng1, lat2, lng2) => {
   const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1); 
-  const dLng = deg2rad(lng2 - lng1); 
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-    Math.sin(dLng/2) * Math.sin(dLng/2); 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const dLat = deg2rad(lat2 - lat1);
+  const dLng = deg2rad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c; // Distance in km
   return d;
 }
 
 const deg2rad = (deg) => {
-  return deg * (Math.PI/180)
+  return deg * (Math.PI / 180)
 }
 
 const loadMore = () => {
@@ -210,20 +217,20 @@ const loadMore = () => {
 const initialLevel = ref(3);
 
 const fitBoundsToMarkers = (markers) => {
-    if (!mapRef.value || !window.kakao || !window.kakao.maps || markers.length === 0) return;
+  if (!mapRef.value || !window.kakao || !window.kakao.maps || markers.length === 0) return;
 
-    const bounds = new window.kakao.maps.LatLngBounds();
-    markers.forEach(marker => {
-        bounds.extend(new window.kakao.maps.LatLng(marker.latitude, marker.longitude));
-    });
+  const bounds = new window.kakao.maps.LatLngBounds();
+  markers.forEach(marker => {
+    bounds.extend(new window.kakao.maps.LatLng(marker.latitude, marker.longitude));
+  });
 
-    mapRef.value.setBounds(bounds);
+  mapRef.value.setBounds(bounds);
 };
 
 const moveToLocation = (lat, lng, zoomLevel = null) => {
   if (mapRef.value && window.kakao && window.kakao.maps) {
     const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
-    
+
     // Pan first
     mapRef.value.panTo(moveLatLon);
 
@@ -247,21 +254,23 @@ defineExpose({
     return userLocation.value;
   },
   setMarkers: (list) => {
+    console.log("MapComponent: setMarkers called with", list.length, "items");
     markerList.value = list;
+    // Emit update-places is optional if MainView handles it, but good for consistency
     emit('update-places', [...markerList.value]);
   }
 });
 
 const onClickMarker = async (marker) => {
   console.log('Marker clicked:', marker);
-  
+
   // Center map on marker and reset zoom
   moveToLocation(marker.latitude, marker.longitude, initialLevel.value);
-  
+
   try {
     const response = await attractionApi.getAttractionById(marker.no);
     console.log('Detail response:', response);
-    
+
     // Map API response to component props
     // API: title, overview, firstImage1, firstImage2, tagNames
     // Component: name, description, images, tags
@@ -273,7 +282,7 @@ const onClickMarker = async (marker) => {
       tags: response.tagNames || [],
       reviewCnt: response.reviewCnt
     };
-    
+
     selectedPlace.value = placeData;
   } catch (error) {
     console.error('Failed to fetch place details:', error);
@@ -312,13 +321,18 @@ onDeactivated(() => {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9999; /* Ensure it's on top of everything */
+  z-index: 9999;
+  /* Ensure it's on top of everything */
   display: flex;
-  touch-action: none; /* Prevent map interaction through overlay */
-  align-items: center; /* Center vertically */
-  justify-content: center; /* Center horizontally */
+  touch-action: none;
+  /* Prevent map interaction through overlay */
+  align-items: center;
+  /* Center vertically */
+  justify-content: center;
+  /* Center horizontally */
   animation: fadeIn 0.3s ease-out;
-  padding: 20px; /* Add padding to prevent touching edges */
+  padding: 20px;
+  /* Add padding to prevent touching edges */
   box-sizing: border-box;
 }
 
@@ -326,9 +340,9 @@ onDeactivated(() => {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
-
 </style>

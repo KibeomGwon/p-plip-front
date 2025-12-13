@@ -2,16 +2,9 @@
     <div class="main-container">
         <!-- Map Background -->
         <div class="map-background">
-            <MapComponent 
-                ref="mapComp" 
-                :contentType="selectedContentType"
-                :searchQuery="searchQuery"
-                :searchRadius="searchRadius"
-                @update-places="updatePlaces" 
-                @update-loading="updateLoading"
-                @reset-list="onResetList"
-                @update-center="updateMapCenter"
-            />
+            <MapComponent ref="mapComp" :contentType="selectedContentType" :searchQuery="searchQuery"
+                :searchRadius="searchRadius" @update-places="updatePlaces" @update-loading="updateLoading"
+                @reset-list="onResetList" @update-center="updateMapCenter" />
         </div>
 
         <!-- TopOverlay: Search & Filter -->
@@ -28,26 +21,13 @@
         </button>
 
         <!-- Bottom Sheet: Place List -->
-        <div 
-            class="bottom-sheet" 
-            :class="{ 'closed': !isListOpen }"
-            :style="{ height: sheetHeight + 'px' }"
-        >
-            <div 
-                class="sheet-handle-bar"
-                @mousedown="startDrag"
-                @touchstart="startDrag"
-            >
+        <div class="bottom-sheet" :class="{ 'closed': !isListOpen }" :style="{ height: sheetHeight + 'px' }">
+            <div class="sheet-handle-bar" @mousedown="startDrag" @touchstart="startDrag">
                 <div class="sheet-handle"></div>
             </div>
             <div class="sheet-content">
-                <PlaceList 
-                    ref="placeList"
-                    :places="places" 
-                    @close="closeSheet" 
-                    @load-more="fetchNextPage"
-                    @move-map="moveMapToPlace"
-                />
+                <PlaceList ref="placeList" :places="places" @close="closeSheet" @load-more="fetchNextPage"
+                    @move-map="moveMapToPlace" />
             </div>
         </div>
 
@@ -57,11 +37,7 @@
         </div>
 
         <!-- Chat Modal -->
-        <ChatModal 
-            :lat="currentMapCenter.lat" 
-            :lng="currentMapCenter.lng"
-            @ai-response="handleAiResponse"
-        />
+        <ChatModal :lat="currentMapCenter.lat" :lng="currentMapCenter.lng" @ai-response="handleAiResponse" />
     </div>
 </template>
 
@@ -99,7 +75,7 @@ const onSearch = ({ query, dist }) => {
     console.log(`MainView: Search triggered. Query: "${query}", Dist: ${dist}km`);
     searchQuery.value = query;
     if (dist === -1) {
-        searchRadius.value = 20000000; 
+        searchRadius.value = 20000000;
     } else {
         searchRadius.value = dist * 1000;
     }
@@ -125,34 +101,37 @@ const onResetList = () => {
 };
 
 const updateMapCenter = (center) => {
+    console.log("MainView: updateMapCenter", center);
     currentMapCenter.value = center;
 };
 
 const handleAiResponse = (data) => {
-    console.log("AI Response received in MainView:", data);
+    console.log("MainView: handleAiResponse called", data);
     if (!data || data.length === 0) {
+        console.warn("MainView: No data received or empty array");
         places.value = [];
         closeSheet();
         return;
     }
 
+    // Update places immediately to ensure list works even if map has issues
+    places.value = data;
+    console.log("MainView: Updated places locally. Count:", places.value.length);
+
     // Update markers on Map
     if (mapComp.value) {
+        console.log("MainView: Calling mapComp.setMarkers");
         mapComp.value.setMarkers(data);
+    } else {
+        console.error("MainView: mapComp ref is null!");
     }
-    
-    // Update local places list (though setMarkers emits update-places, we set it here too to be sure or redundant)
-    // MapComponent.setMarkers emits 'update-places', so updatePlaces will be called.
-    // places.value = data; // Redundant but safe logic would be rely on event.
-    // But since event loop, let's just wait for emit? 
-    // Actually mapComp emits updates triggers updatePlaces.
 
     // Open sheet if closed
-    if (!isListOpen.value) {
-        // openSheet(); // Optional: User said "button appears", didn't strictly say "open list".
-        // "저 데이터가 없으면 Place List(목록보기 버튼)이 없어졌다가, 지도에 마커가 생길때 동시에 버튼이 보이도록해줘"
-        // It says "Show the button", not "Open the list".
-        // So I will just update data. Button visibility is handled by v-if.
+    if (!isListOpen.value && places.value.length > 0) {
+        // Optional: Auto open? or just show button?
+        // User asked to "Show the button". Button shows via v-if="!isListOpen && places.length > 0"
+        // So just updating places is enough.
+        console.log("MainView: List button should appear now.");
     }
 };
 
@@ -199,10 +178,10 @@ const startDrag = (e) => {
 
 const onDrag = (e) => {
     if (!isDragging.value) return;
-    
+
     const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-    const deltaY = startY.value - clientY; 
-    
+    const deltaY = startY.value - clientY;
+
     if (Math.abs(deltaY) > 5) {
         isClick.value = false;
     }
@@ -210,9 +189,9 @@ const onDrag = (e) => {
     if (!isClick.value) {
         const newHeight = startHeight.value + deltaY;
         const maxHeight = window.innerHeight - 100;
-        
+
         if (newHeight >= 100 && newHeight <= maxHeight) {
-             sheetHeight.value = newHeight;
+            sheetHeight.value = newHeight;
         }
     }
 };
@@ -243,7 +222,7 @@ const stopDrag = () => {
     height: 100vh;
     overflow: hidden;
     background-color: #f5f5f5;
-    overscroll-behavior: none; 
+    overscroll-behavior: none;
     touch-action: none;
 }
 
@@ -268,7 +247,7 @@ const stopDrag = () => {
     pointer-events: none;
 }
 
-.top-overlay > * {
+.top-overlay>* {
     pointer-events: auto;
 }
 
@@ -287,7 +266,7 @@ const stopDrag = () => {
     background: white;
     border: none;
     border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     font-weight: bold;
     color: #333;
     cursor: pointer;
@@ -305,7 +284,7 @@ const stopDrag = () => {
     background: white;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .bottom-sheet.closed {
@@ -365,4 +344,3 @@ const stopDrag = () => {
     border-top: 1px solid #eee;
 }
 </style>
-
