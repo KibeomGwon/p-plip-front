@@ -1,18 +1,17 @@
 <template>
-  <div 
-    ref="listContainer"
-    class="place-list-container" 
-  >
+  <div ref="listContainer" class="place-list-container">
     <div class="place-list-header">
       <h2 class="section-title">주변 추천 장소</h2>
     </div>
-    
+
     <div class="place-list" ref="scrollContainer">
       <div v-for="place in visiblePlaces" :key="place.no" class="place-card" @click="onCardClick(place)">
-        <div class="place-image" :style="{ backgroundImage: `url(${place.firstImage1 || place.firstImage2 || 'https://via.placeholder.com/80'})` }"></div>
+        <div class="place-image"
+          :style="{ backgroundImage: `url(${place.thumbnail || place.bigImage || place.firstImage1 || place.firstImage2 || 'https://via.placeholder.com/80'})` }">
+        </div>
         <div class="place-info">
           <h3 class="place-name">{{ place.title }}</h3>
-          <p class="place-desc">{{ place.addr1 || place.addr2 || '주소 정보 없음' }}</p>
+          <p class="place-desc">{{ place.address || place.addr1 || place.addr2 || '주소 정보 없음' }}</p>
           <button class="detail-btn" @click.stop="goToDetail(place.no)">자세히 보기</button>
         </div>
       </div>
@@ -108,7 +107,7 @@ const processInfiniteScroll = async () => {
   if (visibleCount.value < props.places.length) {
     // Load local data
     visibleCount.value += 20;
-    
+
     // Check if we need to load MORE immediately
     await nextTick();
     if (!sentinel.value || !scrollContainer.value) return;
@@ -128,13 +127,13 @@ const processInfiniteScroll = async () => {
 watch(() => props.isLoading, (newVal) => {
   if (!newVal) {
     nextTick(() => {
-       if (sentinel.value && scrollContainer.value) {
-         const sentinelRect = sentinel.value.getBoundingClientRect();
-         const containerRect = scrollContainer.value.getBoundingClientRect();
-         if (sentinelRect.top < containerRect.bottom + 200) {
-           processInfiniteScroll();
-         }
-       }
+      if (sentinel.value && scrollContainer.value) {
+        const sentinelRect = sentinel.value.getBoundingClientRect();
+        const containerRect = scrollContainer.value.getBoundingClientRect();
+        if (sentinelRect.top < containerRect.bottom + 200) {
+          processInfiniteScroll();
+        }
+      }
     });
   }
 });
@@ -148,8 +147,9 @@ onUnmounted(() => {
 .place-list-container {
   background: white;
   border-radius: 20px 20px 0 0;
-  padding: 20px 20px 0 20px; /* Remove bottom padding from container */
-  box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+  padding: 20px 20px 0 20px;
+  /* Remove bottom padding from container */
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -166,15 +166,19 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-bottom: 80px; /* Space for NavBar */
-  touch-action: pan-y; /* Allow vertical scrolling */
-  overscroll-behavior: contain; /* Prevent scroll chaining to parent */
+  padding-bottom: 80px;
+  /* Space for NavBar */
+  touch-action: pan-y;
+  /* Allow vertical scrolling */
+  overscroll-behavior: contain;
+  /* Prevent scroll chaining to parent */
 }
 
 .sentinel {
   height: 20px;
   width: 100%;
-  border: 1px solid transparent; /* Ensure it takes space */
+  border: 1px solid transparent;
+  /* Ensure it takes space */
 }
 
 .place-list::-webkit-scrollbar {
@@ -291,7 +295,12 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
