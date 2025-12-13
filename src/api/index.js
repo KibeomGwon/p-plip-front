@@ -34,15 +34,15 @@ const addRefreshSubscribers = (callback) => {
 api.interceptors.response.use(
     async (response) => {
         const res = response.data;
-        const originalRequest = response.config; 
+        const originalRequest = response.config;
 
         // console.log(originalRequest.headers.Authorization);
         // console.log(res);
-      
+
         if (res.success) {
             return res.data;
-        } 
-        
+        }
+
         if (Math.floor(res.code / 100) === 4 && !originalRequest._retry) {
             if (isRefreshing) {
                 const retryRequest = new Promise((resolve, reject) => {
@@ -58,9 +58,9 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/refresh`, 
-                    {}, 
-                    {withCredentials: true}); // cookie에 값이 들어가 있음.
+                const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/refresh`,
+                    {},
+                    { withCredentials: true }); // cookie에 값이 들어가 있음.
 
                 const data = res.data.data;
 
@@ -72,20 +72,22 @@ api.interceptors.response.use(
                 refreshSubscribers.forEach(callback => callback(data.accessToken));
                 refreshSubscribers = [];
 
+                console.log("refreshed tokens");
+
                 originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
                 return api(originalRequest);
             } catch (error) {
                 console.error("토큰 재발급 실패:", error);
                 localStorage.removeItem('accessToken');
-
-                // window.location.href = '/login';
+                useAuthStore().logout();
+                window.location.href = '/login';
                 throw error;
             } finally {
                 isRefreshing = false;
             }
-            
+
         }
-           
+
         console.error("API Business Error:", res);
         return Promise.reject(res);
     },

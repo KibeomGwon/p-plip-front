@@ -3,14 +3,14 @@
     <!-- Image Carousel -->
     <div class="image-carousel">
       <div class="carousel-track" @scroll="onScroll" @wheel="onWheel">
-        <div v-for="(img, index) in post.freeBoardImages" :key="index" class="carousel-item">
+        <div v-for="(img, index) in postImages" :key="index" class="carousel-item">
           <img :src="getImageUrl(img)" alt="Post Image" class="post-image" />
         </div>
       </div>
       <!-- Dots indicator if multiple images -->
-      <div v-if="post.freeBoardImages && post.freeBoardImages.length > 1" class="carousel-dots">
+      <div v-if="postImages && postImages.length > 1" class="carousel-dots">
         <div 
-          v-for="(image, index) in post.freeBoardImages" 
+          v-for="(image, index) in postImages" 
           :key="image.id" 
           class="dot" 
           :class="{ active: index === currentImageIndex }"
@@ -59,13 +59,13 @@
       <p class="post-date" @click="toggleDateDisplay" style="cursor: pointer;">
         {{ getDisplayDate(post.createdAt || post.date) }} · 조회 {{ post.viewCnt || 0 }}
       </p>
-      <p v-if="post.updatedAt" class="post-date">수정됨 {{ formatTime(post.updatedAt) }}</p>
+      <p v-if="post.updatedAt && post.updatedAt !== post.createdAt" class="post-date">{{ formatTime(post.updatedAt) }} 수정됨</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useRelativeTime } from '@/composables/useRelativeTime';
 import defaultAvatar from '@/assets/default_avatar.png';
 import { useImage, useImages } from '@/composables/useImage';
@@ -90,6 +90,7 @@ const props = defineProps({
       createdAt: '',
       updatedAt: '',
       freeBoardImages: [],
+      noticeImages: [],
       likeCnt: 0
     })
   },
@@ -100,7 +101,23 @@ const props = defineProps({
   isLiked: {
     type: Boolean,
     default: false
+  },
+  likeCount: {
+    type: Number,
+    default: 0
   }
+});
+
+const emit = defineEmits(['toggle-like']);
+
+const postImages = computed(() => {
+  if (props.post.freeBoardImages && props.post.freeBoardImages.length > 0) {
+    return props.post.freeBoardImages;
+  }
+  if (props.post.noticeImages && props.post.noticeImages.length > 0) {
+    return props.post.noticeImages;
+  }
+  return [];
 });
 
 const isLiked = ref(props.isLiked);
@@ -178,7 +195,7 @@ const onWheel = (e) => {
 
   const container = e.currentTarget;
   const width = container.clientWidth;
-  const maxIndex = (props.post.freeBoardImages || []).length - 1;
+  const maxIndex = (postImages.value || []).length - 1;
 
   if (e.deltaY > 0 && currentImageIndex.value < maxIndex) {
     // Next
@@ -255,6 +272,7 @@ const onWheel = (e) => {
   height: 6px;
   border-radius: 50%;
   background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(0, 0, 0, 0.3);
 }
 
 .dot.active {

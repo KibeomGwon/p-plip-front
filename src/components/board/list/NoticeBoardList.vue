@@ -11,18 +11,28 @@
       <div v-for="notice in sortedNotices" :key="notice.id" class="notice-item" @click="goToDetail(notice.id)">
         <div class="notice-tag">공지</div>
         <h3 class="notice-title">{{ notice.title }}</h3>
-        <span class="notice-date">{{ notice.date }} · 조회 {{ notice.viewCnt || 0 }}</span>
+        <span class="notice-date">{{ notice.createdAt?.split('T')[0] || notice.date }} · 조회 {{ notice.viewCnt || 0 }}</span>
       </div>
     </div>
+
+    <!-- Write FAB (Admin Only) -->
+    <button class="write-fab" @click="goToWrite" v-if="authStore.userRole === 'ADMIN'">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import { boardApi } from '@/api/board';
 import SortFilter from '@/components/common/SortFilter.vue';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 const currentSort = ref('desc');
 const sortOptions = [
@@ -30,26 +40,42 @@ const sortOptions = [
   { label: '오래된순', value: 'asc' }
 ];
 
-const notices = ref([
-  { id: 1, title: 'P-PliP 서비스 점검 안내', date: '2025.12.01', viewCnt: 1205 },
-  { id: 2, title: '개인정보 처리방침 변경 안내', date: '2025.11.20', viewCnt: 854 },
-  { id: 3, title: '새로운 기능 업데이트: AI 여행 비서', date: '2025.11.15', viewCnt: 2100 },
-  { id: 4, title: '커뮤니티 이용 수칙 안내', date: '2025.11.01', viewCnt: 3421 },
-  { id: 5, title: '11월 베스트 여행기 선정 결과', date: '2025.11.30', viewCnt: 1540 }
-]);
+const notices = ref([]);
+
+const getNotices = async () => {
+  try {
+    console.log(authStore.userRole);
+    const res = await boardApi.getNoticeBoardList();
+    notices.value = res; 
+    notices.value = Array.isArray(res) ? res : (res.list || []);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+onMounted(() => {
+  getNotices();
+});
 
 const sortedNotices = computed(() => {
   const sorted = [...notices.value];
   sorted.sort((a, b) => {
+    // Assuming createdAt is the field from DB
+    const dateA = a.createdAt || a.date;
+    const dateB = b.createdAt || b.date;
     return currentSort.value === 'desc' 
-      ? b.date.localeCompare(a.date)
-      : a.date.localeCompare(b.date);
+      ? new Date(dateB) - new Date(dateA)
+      : new Date(dateA) - new Date(dateB);
   });
   return sorted;
 });
 
 const goToDetail = (id) => {
   router.push({ name: 'noticeboard-detail', params: { id } });
+};
+
+const goToWrite = () => {
+  router.push({ name: 'noticeboard-write' });
 };
 </script>
 
@@ -108,5 +134,27 @@ const goToDetail = (id) => {
   font-size: 12px;
   color: #999;
   align-self: flex-end;
+}
+
+.write-fab {
+  position: absolute;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #00BFFF; 
+  border: none;
+  box-shadow: 0 4px 12px rgba(0,191,255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 35;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.write-fab:active {
+  transform: scale(0.95);
 }
 </style>

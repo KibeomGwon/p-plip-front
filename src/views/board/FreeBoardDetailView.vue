@@ -21,6 +21,8 @@
         :comments="commentList" 
         :commentPageInfo="commentPageInfo"
         @add-comment="handleAddComment"
+        @edit-comment="handleEditComment"
+        @delete-comment="handleDeleteComment"
       />
     </div>
     <div v-else class="loading-container">
@@ -64,7 +66,6 @@ onMounted(() => {
 });
 
 const getLikeFreeBoard = () => {
-  console.log(useAuthStore().isLoggedIn);
   if (!useAuthStore().isLoggedIn) 
     return;
   boardApi.getLikeFreeBoard(boardId.value).then(res => {
@@ -92,15 +93,17 @@ const getBoardDatas = () => {
 }
 
 const getBoardCommentDatas = async () => {
+  if (isCommentLoading.value) return;
+  isCommentLoading.value = true;
+  
   try {
-      // if (commentPageInfo.value.pageNo > 1 && !commentPageInfo.value.next) {
-      //   console.log("더 이상 댓글이 없습니다.");
-      //   return;
-      // }
-      const res = await boardApi.getFreeBoardComments(boardId.value, { pageNum: commentPageInfo.value.pageNum });
+      const res = await boardApi.getFreeBoardComments(boardId.value, { 
+          pageNum: commentPageInfo.value.pageNum,
+          pageSize: 10 
+      });
       
       console.log(res);
-      // If it's the first page, replace; otherwise append
+      
       if (commentPageInfo.value.pageNum === 1) {
           commentList.value = res.list;
       } else {
@@ -118,6 +121,7 @@ const getBoardCommentDatas = async () => {
         next: res.next
       };
 
+      console.log(commentList.value);
       console.log(commentPageInfo.value);
   } catch (err) {
     console.error(err);
@@ -178,11 +182,39 @@ const handleAddComment = async (text) => {
     alert(error.message);
   }
 };
+
+const handleEditComment = async (comment) => {
+  try {
+    await boardApi.updateFreeBoardComment(comment.id, { content: comment.content });
+    // Refresh comments
+    await getBoardCommentDatas();
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "댓글 수정 실패");
+  }
+};
+
+const handleDeleteComment = async (commentId) => {
+  try {
+    await boardApi.deleteFreeBoardComment(commentId);
+    // Refresh comments
+    await getBoardCommentDatas();
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "댓글 삭제 실패");
+  }
+};
+
 const handleScroll = (e) => {
   const { scrollTop, clientHeight, scrollHeight } = e.target;
+  console.log(`Scroll: top=${scrollTop}, client=${clientHeight}, scrollHeight=${scrollHeight}, sum=${scrollTop + clientHeight}`);
+  
   // Trigger when close to bottom (e.g., 50px threshold)
   if (scrollTop + clientHeight >= scrollHeight - 50) {
+    console.log("Bottom reached!");
+    console.log(`Next: ${commentPageInfo.value.next}, Loading: ${isCommentLoading.value}`);
     if (commentPageInfo.value.next && !isCommentLoading.value) {
+        console.log("Fetching next page...");
         commentPageInfo.value.pageNum++;
         getBoardCommentDatas();
     }
@@ -193,9 +225,10 @@ const handleScroll = (e) => {
 <style scoped>
 .detail-container {
   background: white;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   touch-action: none; /* Prevent whole page drag */
 }
 
@@ -262,6 +295,25 @@ const handleScroll = (e) => {
   padding-bottom: 40px;
   touch-action: pan-y; /* Allow vertical scrolling */
   overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.3) transparent;
+}
+
+.content-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.3);
+  border-radius: 3px;
+}
+
+.content-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0,0,0,0.5);
 }
 
 .loading-container {
