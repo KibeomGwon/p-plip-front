@@ -74,8 +74,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 import ImageCropper from '@/components/common/ImageCropper.vue';
 import { useFreeBoardStore } from '@/stores/freeboard';
 import { boardApi } from '@/api/board';
@@ -95,6 +95,40 @@ const content = ref('');
 const croppedImages = ref([]); // Array of { blob, url }
 const draggedIndex = ref(null);
 const editId = ref(null);
+const removedImgs = ref([]);
+const isCompleted = ref(false);
+
+onBeforeRouteLeave((to, from, next) => {
+  if (!isCompleted.value) {
+    const answer = window.confirm('저장되지 않은 데이터가 있습니다. 정말 나가시겠습니까?');
+    if (answer) {
+      next(); // 이동 허용
+      if (addedImgs.value.length > 0) {
+        addedImgs.value.forEach(img => {
+          removeImage(img.id);
+        });
+      }
+    } else {
+      next(false); // 이동 취소 (현재 페이지 유지)
+    }
+  } else {
+    next(); // 바로 이동
+  }
+});
+
+const preventClose = (e) => {
+  e.preventDefault();
+  if (!isCompleted.value && addedImgs.value.length > 0) {
+    addedImgs.value.forEach(img => {
+      removeImage(img.id);
+    });
+  }
+  // Cleanup logic if needed
+};
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', preventClose);
+});
 
 onMounted(() => {
   if (route.params.id) {
@@ -176,6 +210,7 @@ const onCrop = async (blob) => {
         id: fileData.id,
         url: fullUrl,
         name: fileData.name,
+        status: 'NEW'
       });
       addedImgs.value.push({id: fileData.id, status: 'NEW'});
     });
@@ -196,6 +231,7 @@ const cancelCrop = () => {
 const removeImage = (index) => {
   if (croppedImages.value[index]) {
     croppedImages.value[index].status = 'REMOVE';
+    removedImgs.value.push({id: croppedImages.value[index].id, status: 'REMOVE'});
   }
   croppedImages.value.splice(index, 1);
 };
@@ -204,7 +240,7 @@ const submitPost = async () => {
   const updateData = {
     title: title.value,
     content: content.value,
-    images: croppedImages.value,
+    images: croppedImages.value.concat(removedImgs.value),
   };
 
   try {
@@ -229,6 +265,7 @@ const submitPost = async () => {
     }
 
       const newPostId = res.id;
+      isCompleted.value = true;
       // Navigate to detail, replace to avoid going back to write form
       router.replace({ name: 'freeboard-detail', params: { id: newPostId } });
   } catch (err) {

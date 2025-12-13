@@ -42,7 +42,12 @@
         <div class="comment-content">
           <div class="comment-header">
             <span class="comment-author">{{ comment.authorNickName }}</span>
-            <span class="comment-date">2시간 전</span>
+            <span class="comment-date" v-if="comment.updatedAt !== null">{{ formatTime(comment.updatedAt) }} 수정됨</span>
+            <span class="comment-date" v-else>{{ formatTime(comment.createdAt) }}</span>
+            <div class="comment-actions" v-if="comment.author">
+              <button class="action-btn" @click="onEdit(comment)">수정</button>
+              <button class="action-btn" @click="onDelete(comment)">삭제</button>
+            </div>
           </div>
           <p class="comment-text">{{ comment.content }}</p>
         </div>
@@ -56,10 +61,12 @@ import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useImage } from '@/composables/useImage';
 import { useDefaultImage } from '@/composables/useDefaultImage';
+import { useRelativeTime } from '@/composables/useRelativeTime';
 
 const authStore = useAuthStore();
 const { getImageUrl } = useImage();
 const defaultImage = useDefaultImage();
+const { formatTime } = useRelativeTime();
 
 const props = defineProps({
   comments: {
@@ -74,7 +81,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['add-comment']);
+const emit = defineEmits(['add-comment', 'delete-comment', 'edit-comment']);
 const newComment = ref('');
 
 const submitComment = (e) => {
@@ -83,6 +90,20 @@ const submitComment = (e) => {
   
   emit('add-comment', newComment.value);
   newComment.value = '';
+};
+
+const onEdit = (comment) => {
+  // Placeholder for edit functionality
+  const newContent = prompt("댓글을 수정하세요:", comment.content);
+  if (newContent !== null && newContent.trim() !== "") {
+      emit('edit-comment', { ...comment, content: newContent });
+  }
+};
+
+const onDelete = (comment) => {
+  if (confirm("정말로 삭제하시겠습니까?")) {
+      emit('delete-comment', comment.id);
+  }
 };
 </script>
 
@@ -232,4 +253,25 @@ const submitComment = (e) => {
   line-height: 1.4;
   margin: 0;
 }
+
+.comment-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  font-size: 12px;
+  color: #999;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.action-btn:hover {
+  text-decoration: underline;
+  color: #666;
+}
+
 </style>
