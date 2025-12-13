@@ -101,9 +101,19 @@ const router = createRouter({
       component: () => import('@/views/board/FreeBoardWriteView.vue')
     },
     {
+      path: '/board/noticeboard/write',
+      name: 'noticeboard-write',
+      component: () => import('@/views/board/NoticeBoardWriteView.vue')
+    },
+    {
       path: '/board/freeboard/:id/modify',
       name: 'freeboard-modify',
       component: () => import('@/views/board/FreeBoardModifyView.vue')
+    },
+    {
+      path: '/board/noticeboard/:id/modify',
+      name: 'noticeboard-modify',
+      component: () => import('@/views/board/NoticeBoardModifyView.vue')
     }
   ],
 })
