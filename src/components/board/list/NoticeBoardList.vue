@@ -1,6 +1,6 @@
 <template>
   <div class="notice-board-container">
-    <div class="filter-wrapper">
+    <div class="filter-wrapper" v-if="!hideFilter">
       <SortFilter 
         v-model="currentSort" 
         :options="sortOptions" 
@@ -16,7 +16,7 @@
     </div>
 
     <!-- Write FAB (Admin Only) -->
-    <button class="write-fab" @click="goToWrite" v-if="authStore.userRole === 'ADMIN'">
+    <button class="write-fab" @click="goToWrite" v-if="authStore.userRole === 'ADMIN' && !hideFilter">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -25,16 +25,31 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { boardApi } from '@/api/board';
 import SortFilter from '@/components/common/SortFilter.vue';
 
+const props = defineProps({
+  hideFilter: {
+    type: Boolean,
+    default: false
+  },
+  sortOrder: {
+    type: String,
+    default: 'desc'
+  },
+  filterType: {
+    type: String,
+    default: 'all' // 'all', 'my-posts'
+  }
+});
+
 const router = useRouter();
 const authStore = useAuthStore();
 
-const currentSort = ref('desc');
+const currentSort = ref(props.sortOrder);
 const sortOptions = [
   { label: '최신순', value: 'desc' },
   { label: '오래된순', value: 'asc' }
@@ -42,11 +57,19 @@ const sortOptions = [
 
 const notices = ref([]);
 
+watch(() => props.sortOrder, (newVal) => {
+    currentSort.value = newVal;
+});
+
 const getNotices = async () => {
   try {
-    console.log(authStore.userRole);
-    const res = await boardApi.getNoticeBoardList();
-    notices.value = res; 
+    let res;
+    if (props.filterType === 'my-posts') {
+        res = await boardApi.getMyPostNoticeBoardList();
+    } else {
+        res = await boardApi.getNoticeBoardList();
+    }
+    
     notices.value = Array.isArray(res) ? res : (res.list || []);
   } catch (err) {
     console.error(err);

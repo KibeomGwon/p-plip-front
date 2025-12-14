@@ -34,6 +34,7 @@ const props = defineProps({
     type: Object,
     required: true,
     default: () => ({
+      no: '',
       name: '',
       description: '',
       tags: [],
@@ -61,8 +62,12 @@ const toggleExpand = () => {
 const goToReview = () => {
   // Assuming the place ID is available in the current route params
   // or passed via props. For now, using route params as default
-  const placeId = route.params.id || 1; 
-  router.push({ name: 'place-reviews', params: { id: placeId } });
+  const placeId = props.place.no; 
+  router.push({ 
+    name: 'place-reviews', 
+    params: { id: placeId },
+    query: { name: props.place.name }
+  });
 };
 </script>
 

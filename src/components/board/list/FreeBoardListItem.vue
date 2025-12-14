@@ -13,12 +13,12 @@
           <div class="author-avatar" :style="{ backgroundColor: post.avatarColor }" v-if="post.avatarImage">
             <img :src="post.avatarImage" alt="Author" class="avatar-img">
           </div>
-          <span class="author-name">{{ post.authorName || post.author }}</span>
+          <span class="author-name">{{ post.authorName }}</span>
         </div>
         
         <div class="interaction-info">
           <div class="meta-item date-item">
-            <span>{{ formatTime(post.updatedAt || post.createdAt) }}</span>
+            <span>{{ formatTime(post.createdAt) }}</span>
           </div>
           <div class="meta-item">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

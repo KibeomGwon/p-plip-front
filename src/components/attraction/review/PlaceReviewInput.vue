@@ -20,10 +20,9 @@
       <input 
         type="file" 
         ref="fileInput" 
-        multiple 
         accept="image/*" 
         class="hidden-input"
-        @change="handleFileSelect"
+        @change="onFileSelect"
       />
       
       <input 
@@ -32,63 +31,160 @@
         placeholder="리뷰를 남겨주세요..." 
         v-model="text"
         @keyup.enter="handleSubmit"
+        @focus="handleInputFocus"
       />
       
       <button class="submit-btn" @click="handleSubmit" :disabled="!isValid">
         작성
       </button>
     </footer>
+
+    <!-- Cropper Modal -->
+    <Teleport to="body">
+      <div v-if="showCropper" class="cropper-modal">
+        <div class="cropper-wrapper">
+          <ImageCropper 
+            :imageFile="selectedFile" 
+            @crop="onCrop" 
+            @cancel="cancelCrop" 
+          />
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import ImageCropper from '@/components/common/ImageCropper.vue';
+import { fileApi } from '@/api/file';
 
 const emit = defineEmits(['submit']);
+const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
 
 const text = ref('');
 const fileInput = ref(null);
 const files = ref([]);
 
+const showCropper = ref(false);
+const selectedFile = ref(null);
+
 const isValid = computed(() => {
   return text.value.trim().length > 0 || files.value.length > 0;
 });
 
+const cleanupFiles = () => {
+  if (files.value.length > 0) {
+    files.value.forEach(file => {
+      if (file.id) {
+        // Best effort delete
+        fileApi.deleteFile(file.id, "REVIEW").catch(err => console.error(err));
+      }
+    });
+    // Clear to prevent double delete
+    files.value = [];
+  }
+};
+
+// Handle page refresh/close
+window.addEventListener('beforeunload', cleanupFiles);
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', cleanupFiles);
+  cleanupFiles();
+});
+
+
+const checkAuth = () => {
+  if (!authStore.isLoggedIn) {
+    if (confirm('로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?')) {
+      router.push({ 
+        name: 'login', 
+        query: { redirect: route.fullPath } 
+      });
+    }
+    return false;
+  }
+  return true;
+};
+
 const triggerFileInput = () => {
+  if (!checkAuth()) return;
   fileInput.value.click();
 };
 
-const handleFileSelect = (event) => {
-  const selectedFiles = Array.from(event.target.files);
-  if (!selectedFiles.length) return;
-
-  const newFiles = selectedFiles.map(file => ({
-    file,
-    url: URL.createObjectURL(file)
-  }));
-
-  files.value = [...files.value, ...newFiles];
-  
-  // Reset input so same file can be selected again if needed (though usually not for multiple)
-  event.target.value = ''; 
+const handleInputFocus = (e) => {
+  if (!checkAuth()) {
+    e.target.blur();
+  }
 };
 
-const removeFile = (index) => {
-  URL.revokeObjectURL(files.value[index].url); // Clean up
+
+const onFileSelect = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    selectedFile.value = file;
+    showCropper.value = true;
+  }
+  e.target.value = '';
+};
+
+const onCrop = async (blob) => {
+  try {
+    const formData = new FormData();
+    const fileName = selectedFile.value?.name || 'image.png';
+    formData.append('file', blob, fileName);
+
+    const res = await fileApi.uploadFile(formData, "REVIEW");
+    const fileBaseUrl = import.meta.env.VITE_FILE_BASE_URL || '';
+    const fullUrl = `${fileBaseUrl}/${res.name}`;
+    
+    files.value.push({
+      id: res.id,
+      url: fullUrl,
+      name: res.name
+    });
+  } catch (err) {
+    console.error(err);
+    alert('이미지 업로드 실패');
+  }
+
+  showCropper.value = false;
+  selectedFile.value = null;
+};
+
+const cancelCrop = () => {
+  showCropper.value = false;
+  selectedFile.value = null;
+};
+
+const removeFile = async (index) => {
+  const file = files.value[index];
+  if (file.id) {
+    try {
+      await fileApi.deleteFile(file.id, "REVIEW");
+    } catch (err) {
+      console.error(err);
+    }
+  }
   files.value.splice(index, 1);
 };
+
 
 const handleSubmit = () => {
   if (!isValid.value) return;
   
   emit('submit', {
     text: text.value,
-    images: files.value.map(f => f.url) // In real app, you'd upload f.file
+    images: files.value.map(f => f.id)
   });
   
   // Reset
   text.value = '';
-  files.value.forEach(f => URL.revokeObjectURL(f.url));
   files.value = [];
 };
 </script>
@@ -110,12 +206,13 @@ const handleSubmit = () => {
 .preview-area {
   display: flex;
   gap: 8px;
-  padding: 12px 16px 0;
+  padding: 12px 16px;
   overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
+  background-color: #f8f9fa; /* Slight subtle background for differentiation */
+  border-bottom: 1px solid #eee; /* Separator */
 }
-
 .preview-item {
   position: relative;
   flex-shrink: 0;
@@ -217,5 +314,23 @@ const handleSubmit = () => {
 .submit-btn:disabled {
   background: #b2dffc;
   cursor: not-allowed;
+}
+
+.cropper-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cropper-wrapper {
+  max-width: 90%;
+  max-height: 90%;
 }
 </style>
