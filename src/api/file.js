@@ -1,5 +1,13 @@
 import api from "./index";
 
+export const IMAGE_TYPE = {
+    FREE_BOARD: "FREE_BOARD",
+    NOTICE: "NOTICE",
+    PROFILE: "PROFILE",
+    REVIEW: "REVIEW",
+    STORY_BOOK: "STORY_BOOK",
+}
+
 export const fileApi = {
     uploadFile: (file, imageType) => api.post("/file/image", file, {
         headers: {

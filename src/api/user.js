@@ -7,5 +7,7 @@ export const userApi = {
     sendEmailCheckCode: (data) => api.post("/user/join/send-verification-email", data),
     checkEmailCode: (data) => api.post("/user/join/verification-email", data),
     register: (data) => api.post("/user/join", data),
-    nicknameDupCheck: (data) => api.get("/user/join/nickname-dupcheck", {params: data}),
+    nicknameDupCheck: (data) => api.get("/user/join/nickname-dupcheck", { params: data }),
+    getUserProfile: () => api.get("/user/profile/info"),
+    updateUserProfile: (data) => api.patch("/user/profile/info", data),
 };

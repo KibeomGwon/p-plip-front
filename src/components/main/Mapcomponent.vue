@@ -24,10 +24,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onDeactivated, watch } from 'vue';
+import { ref, computed, onDeactivated, watch, onMounted } from 'vue';
 import { KakaoMap, KakaoMapMarker } from 'vue3-kakao-maps';
 import PlaceDetailSheet from '@/components/attraction/PlaceDetailSheet.vue';
 import { attractionApi } from '@/api/attraction';
+import { useLocationStore } from '@/stores/location';
+import { storeToRefs } from 'pinia';
 
 const props = defineProps({
   contentType: {
@@ -58,55 +60,42 @@ const pageNum = ref(1);
 const isLoading = ref(false);
 const isLastPage = ref(false);
 
+const locationStore = useLocationStore();
+const { location: userLocation, isInitialized } = storeToRefs(locationStore);
+
 // Watchers for filters
 watch(() => [props.contentType, props.searchQuery, props.searchRadius], () => {
   console.log("MapComponent: Filters changed");
   fetchAttractions(true, true); // Reset and Center
 }, { deep: true });
 
-// Auto-fit bounds when markerList changes - REMOVED per user request to keep map center fixed
-/*
-watch(() => markerList.value, (newMarkers) => {
-  if (newMarkers && newMarkers.length > 0) {
-    fitBoundsToMarkers(newMarkers);
-  }
-}, { deep: true });
-*/
-
-const userLocation = ref({ lat: 33.450701, lng: 126.570667 });
-
 const onLoadKakaoMap = (map) => {
   console.log("on load and call api");
   mapRef.value = map;
   initialLevel.value = map.getLevel();
 
-  // Try to get user's current location
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-
-      console.log(`User stored location: ${lat}, ${lng}`);
-      userLocation.value = { lat, lng };
+  // Try to get user's current location via Store
+  locationStore.fetchCurrentLocation()
+    .then((loc) => {
+      console.log(`User stored location: ${loc.lat}, ${loc.lng}`);
 
       // Move map to user location initially
-      const moveLatLon = new window.kakao.maps.LatLng(lat, lng);
-      map.setCenter(moveLatLon);
+      if (window.kakao && window.kakao.maps) {
+        const moveLatLon = new window.kakao.maps.LatLng(loc.lat, loc.lng);
+        map.setCenter(moveLatLon);
+      }
 
       // Explicitly update parent immediately
-      emit('update-center', { lat, lng });
+      emit('update-center', { lat: loc.lat, lng: loc.lng });
 
       // Fetch data based on this fixed location
       fetchAttractions(true, false);
-    }, (err) => {
+    })
+    .catch((err) => {
       console.error("Geolocation failed:", err);
-      // Fallback to default location fetch
+      // Fallback to default location fetch (Jeju or previous)
       fetchAttractions(true, false);
     });
-  } else {
-    // Fallback if no geolocation support
-    fetchAttractions(true, false);
-  }
 
   if (window.kakao && window.kakao.maps) {
     // Re-sort list when map is dragged (List always reflects distance from CURRENT VIEW)
@@ -124,7 +113,7 @@ const fetchAttractions = (isReset = true, shouldCenter = false) => {
   isLoading.value = true;
   emit('update-loading', true);
 
-  // Use FIXED User Location for search origin
+  // Use FIXED User Location for search origin from Store
   const centerLat = userLocation.value.lat;
   const centerLng = userLocation.value.lng;
   const level = mapRef.value.getLevel();
@@ -166,10 +155,6 @@ const fetchAttractions = (isReset = true, shouldCenter = false) => {
     // Sort by distance from Current Map Center (Visual center)
     const currentCenter = mapRef.value.getCenter();
     sortMarkers(currentCenter.getLat(), currentCenter.getLng());
-
-    // sortMarkers already emits update-places, but we might need it before moving?
-    // sortMarkers emits. So we don't need explicit emit here, or we can leave it?
-    // Let's rely on sortMarkers to emit.
   }).catch(error => {
     console.error('api error', error);
   }).finally(() => {

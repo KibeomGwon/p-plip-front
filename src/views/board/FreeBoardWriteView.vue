@@ -138,7 +138,7 @@ const onCrop = async (blob) => {
     const fileName = selectedFile.value?.name || 'image.png';
     formData.append('file', blob, fileName);
 
-    const res = await fileApi.uploadFile(formData, "FREE_BOARD").then(res => {
+    const res = await fileApi.uploadFile(formData, IMAGE_TYPE.FREE_BOARD).then(res => {
       console.log(res);
       const fileData = res;
       const fileBaseUrl = import.meta.env.VITE_FILE_BASE_URL || '';
