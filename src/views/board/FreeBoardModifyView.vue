@@ -74,10 +74,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 import ImageCropper from '@/components/common/ImageCropper.vue';
-import { useFreeBoardStore } from '@/stores/freeboard';
 import { boardApi } from '@/api/board';
 import { fileApi } from '@/api/file';
 import { useImage } from '@/composables/useImage';
@@ -86,7 +85,6 @@ const { getImageUrl } = useImage();
  
 const router = useRouter();
 const route = useRoute();
-const store = useFreeBoardStore();
 const addedImgs = ref([]);
 
 const isEditMode = ref(true);
@@ -97,9 +95,15 @@ const draggedIndex = ref(null);
 const editId = ref(null);
 const removedImgs = ref([]);
 const isCompleted = ref(false);
+const isEdit = ref(false);
+const isLoaded = ref(false);
+
+watch([title, content], () => {
+    if (isLoaded.value) isEdit.value = true;
+});
 
 onBeforeRouteLeave((to, from, next) => {
-  if (!isCompleted.value) {
+  if (isEdit.value && !isCompleted.value) {
     const answer = window.confirm('저장되지 않은 데이터가 있습니다. 정말 나가시겠습니까?');
     if (answer) {
       next(); // 이동 허용
@@ -118,7 +122,7 @@ onBeforeRouteLeave((to, from, next) => {
 
 const preventClose = (e) => {
   e.preventDefault();
-  if (!isCompleted.value && addedImgs.value.length > 0) {
+  if (isEdit.value && !isCompleted.value && addedImgs.value.length > 0) {
     addedImgs.value.forEach(img => {
       removeImage(img.id);
     });
@@ -133,7 +137,7 @@ onUnmounted(() => {
 onMounted(() => {
   if (route.params.id) {
     editId.value = parseInt(route.params.id);
-    boardApi.getFreeBoardDetail(editId.value).then(res => {
+    boardApi.getFreeBoardDetail(editId.value).then(async res => {
       console.log(res);
       title.value = res.title;
       content.value = res.content || res.title; 
@@ -146,6 +150,8 @@ onMounted(() => {
             status: 'EXISTING'});
         });
       }
+      await nextTick();
+      isLoaded.value = true;
     }).catch((err) => {
       console.log(err);
       alert(err.message);
@@ -213,6 +219,7 @@ const onCrop = async (blob) => {
         status: 'NEW'
       });
       addedImgs.value.push({id: fileData.id, status: 'NEW'});
+      isEdit.value = true;
     });
   } catch (err) {
     console.error(err);
@@ -234,6 +241,7 @@ const removeImage = (index) => {
     removedImgs.value.push({id: croppedImages.value[index].id, status: 'REMOVE'});
   }
   croppedImages.value.splice(index, 1);
+  isEdit.value = true;
 };
 
 const submitPost = async () => {

@@ -42,6 +42,18 @@
               <path d="M9 18L15 12L9 6" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </li>
+          <li class="menu-item" @click="handleMyReviews">
+            <div class="menu-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 4H4V20H20V14" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M18.5 2.5L21.5 5.5L13 14L10 14L10 11L18.5 2.5Z" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span class="menu-text">내 리뷰</span>
+            <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 18L15 12L9 6" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </li>
           <li class="menu-item" @click="handleProfileEdit">
             <div class="menu-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -117,6 +129,18 @@ const handleMyPosts = () => {
      return;
   }
   router.push({ name: 'my-posts' });
+};
+
+const handleMyReviews = () => {
+  if (!authStore.isLoggedIn) {
+     alert("로그인이 필요합니다.");
+     router.push({ 
+       name: 'login', 
+       query: { redirect: router.currentRoute.value.fullPath } 
+     });
+     return;
+  }
+  router.push({ name: 'my-reviews' });
 };
 
 const handleProfileEdit = () => {
