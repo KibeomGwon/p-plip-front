@@ -74,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'; // Fixed imports
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'; // Fixed imports
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 import ImageCropper from '@/components/common/ImageCropper.vue';
 import { boardApi } from '@/api/board';
@@ -95,9 +95,15 @@ const draggedIndex = ref(null);
 const editId = ref(null);
 const removedImgs = ref([]);
 const isCompleted = ref(false);
+const isEdit = ref(false);
+const isLoaded = ref(false);
+
+watch([title, content], () => {
+    if (isLoaded.value) isEdit.value = true;
+});
 
 onBeforeRouteLeave((to, from, next) => {
-  if (!isCompleted.value) {
+  if (isEdit.value && !isCompleted.value) {
     const answer = window.confirm('저장되지 않은 데이터가 있습니다. 정말 나가시겠습니까?');
     if (answer) {
       if (addedImgs.value.length > 0) {
@@ -116,7 +122,7 @@ onBeforeRouteLeave((to, from, next) => {
 
 const preventClose = (e) => {
   e.preventDefault();
-  if (!isCompleted.value && addedImgs.value.length > 0) {
+  if (isEdit.value && !isCompleted.value && addedImgs.value.length > 0) {
     addedImgs.value.forEach(img => {
       removeImage(img.id);
     });
@@ -130,7 +136,7 @@ onUnmounted(() => {
 onMounted(() => {
   if (route.params.id) {
     editId.value = parseInt(route.params.id);
-    boardApi.getNoticeBoardDetail(editId.value).then(res => {  
+    boardApi.getNoticeBoardDetail(editId.value).then(async res => {  
       const data = res; 
       
       title.value = data.title;
@@ -144,6 +150,8 @@ onMounted(() => {
             status: 'EXISTING'});
         });
       }
+      await nextTick();
+      isLoaded.value = true;
     }).catch((err) => {
       console.log(err);
       alert(err.message || "정보를 불러오는데 실패했습니다.");
@@ -206,6 +214,7 @@ const onCrop = async (blob) => {
         status: 'NEW'
       });
       addedImgs.value.push({id: fileData.id, status: 'NEW'});
+      isEdit.value = true;
     });
   } catch (err) {
     console.error(err);
@@ -227,6 +236,7 @@ const removeImage = (index) => {
     removedImgs.value.push({id: croppedImages.value[index].id, status: 'REMOVE'});
   }
   croppedImages.value.splice(index, 1);
+  isEdit.value = true;
 };
 
 const onWheel = (e) => {

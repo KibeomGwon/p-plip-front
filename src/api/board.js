@@ -24,4 +24,5 @@ export const boardApi = {
     postNoticeBoardComment: (id, data) => api.post(`/notice/${id}/comment`, data),
     updateNoticeBoardComment: (id, data) => api.put(`/notice/comment/${id}`, data),
     deleteNoticeBoardComment: (id) => api.delete(`/notice/comment/${id}`),
+    getMyPostNoticeBoardList: () => api.get("/notice/my-post"),
 }

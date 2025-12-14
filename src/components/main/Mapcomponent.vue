@@ -148,8 +148,14 @@ const fetchAttractions = (isReset = true, shouldCenter = false) => {
 
     if (isReset) {
       markerList.value = list;
+      if (shouldCenter && list.length > 0) {
+        fitBoundsToMarkers(markerList.value);
+      }
     } else {
       markerList.value = [...markerList.value, ...list];
+      // Only fit bounds when loading more (User Request)
+      // This allows seeing all markers including new ones
+      fitBoundsToMarkers(markerList.value);
     }
 
     // Sort by distance from Current Map Center (Visual center)
@@ -261,6 +267,7 @@ const onClickMarker = async (marker) => {
     // Component: name, description, images, tags
     const placeData = {
       ...response, // Keep original data too just in case
+      no: response.no,
       name: response.title,
       description: response.overview,
       images: [response.firstImage1, response.firstImage2].filter(img => img), // Filter out empty/null images

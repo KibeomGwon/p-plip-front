@@ -38,6 +38,11 @@ const router = createRouter({
       component: MyPostListView
     },
     {
+      path: '/my-reviews',
+      name: 'my-reviews',
+      component: () => import('@/views/myinfo/MyReviewListView.vue')
+    },
+    {
       path: '/place/:id',
       name: 'place-detail',
       component: PlaceDetailView

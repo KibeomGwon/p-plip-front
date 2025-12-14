@@ -56,10 +56,18 @@
     <!-- Content -->
     <div class="post-text-content">
       <p class="post-body">{{ post.content }}</p>
-      <p class="post-date" @click="toggleDateDisplay" style="cursor: pointer;">
-        {{ getDisplayDate(post.createdAt || post.date) }} · 조회 {{ post.viewCnt || 0 }}
+      <p class="post-date">
+        <span class="create-label">
+          {{ formatTime(post.createdAt || post.date) }} · 조회 {{ post.viewCnt || 0 }}
+          <span class="tooltip-text">{{ formatExactDate(post.createdAt || post.date) }}</span>
+        </span>
       </p>
-      <p v-if="post.updatedAt && post.updatedAt !== post.createdAt" class="post-date">{{ formatTime(post.updatedAt) }} 수정됨</p>
+      <p v-if="post.updatedAt && post.updatedAt !== post.createdAt" class="post-date">
+        <span class="edited-label">
+           {{ formatTime(post.updatedAt) }} 수정됨
+           <span class="tooltip-text">{{ formatExactDate(post.updatedAt) }}</span>
+        </span>
+      </p>
     </div>
   </div>
 </template>
@@ -162,22 +170,16 @@ const toggleLike = async () => {
 
 const currentImageIndex = ref(0);
 let isScrolling = false;
-const showExactDate = ref(false);
 
-const toggleDateDisplay = () => {
-  showExactDate.value = !showExactDate.value;
-};
-
-const getDisplayDate = (date) => {
+const formatExactDate = (date) => {
   if (!date) return '';
-  if (showExactDate.value) {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-  return formatTime(date);
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${year}.${month}.${day} ${hours}:${minutes}`;
 };
 
 const onScroll = (e) => {
@@ -347,6 +349,49 @@ const onWheel = (e) => {
   color: #999;
   margin: 0;
   text-transform: uppercase;
+}
+
+.edited-label, .create-label {
+    position: relative;
+    cursor: help;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+.edited-label:hover .tooltip-text,
+.edited-label:active .tooltip-text,
+.create-label:hover .tooltip-text,
+.create-label:active .tooltip-text {
+  visibility: visible;
+  opacity: 1;
 }
 
 .like-wrapper {

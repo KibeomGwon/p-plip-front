@@ -77,7 +77,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 import ImageCropper from '@/components/common/ImageCropper.vue';
-import { useFreeBoardStore } from '@/stores/freeboard';
 import { boardApi } from '@/api/board';
 import { fileApi } from '@/api/file';
 
@@ -87,7 +86,6 @@ const authStore = useAuthStore();
 
 const router = useRouter();
 const route = useRoute();
-const store = useFreeBoardStore();
 
 const title = ref('');
 const content = ref('');

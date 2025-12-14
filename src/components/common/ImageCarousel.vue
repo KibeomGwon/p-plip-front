@@ -4,6 +4,7 @@
       class="carousel-track" 
       ref="trackRef"
       @scroll="handleScroll"
+      @wheel.prevent="onWheel"
     >
       <div 
         v-for="(image, index) in images" 
@@ -48,6 +49,29 @@ const handleScroll = () => {
   const { scrollLeft, clientWidth } = trackRef.value;
   activeIndex.value = Math.round(scrollLeft / clientWidth);
 };
+
+let wheelTimeout = null;
+const onWheel = (e) => {
+  if (wheelTimeout) return;
+  
+  // Basic threshold to ignore small trackpad jitters
+  if (Math.abs(e.deltaY) < 10) return;
+
+  const direction = e.deltaY > 0 ? 1 : -1;
+  const nextPos = activeIndex.value + direction;
+
+  if (nextPos >= 0 && nextPos < props.images.length) {
+    trackRef.value.scrollTo({
+      left: nextPos * trackRef.value.clientWidth,
+      behavior: 'smooth'
+    });
+    
+    // Cooldown to prevent rapid skipping
+    wheelTimeout = setTimeout(() => {
+      wheelTimeout = null;
+    }, 500);
+  }
+};
 </script>
 
 <style scoped>
@@ -67,6 +91,7 @@ const handleScroll = () => {
   height: 100%;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
+  cursor: grab;
 }
 
 .carousel-track::-webkit-scrollbar {
@@ -102,6 +127,7 @@ const handleScroll = () => {
   height: 6px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.3);
   transition: background-color 0.2s;
 }
 

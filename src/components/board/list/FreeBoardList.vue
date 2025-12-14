@@ -32,7 +32,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useFreeBoardStore } from '@/stores/freeboard';
 import { useAuthStore } from '@/stores/auth';
 import { boardApi } from '@/api/board';
 import FreeBoardListItem from './FreeBoardListItem.vue';
@@ -50,10 +49,10 @@ const props = defineProps({
 });
 
 const router = useRouter();
-const store = useFreeBoardStore();
 const authStore = useAuthStore();
 const activeFilter = ref('popular');
 const posts = ref([]);
+const isLoading = ref(false);
 const pageInfo = ref({
   pageNo: 1,
   pageSize: 10,
@@ -72,12 +71,12 @@ const sortOptions = [
 
 const goToWrite = () => {
   if (!authStore.isLoggedIn) {
-    alert("로그인이 필요합니다.");
-    router.push({ 
-      name: 'login', 
-      query: { redirect: router.currentRoute.value.fullPath } 
-    });
-    return;
+     alert("로그인이 필요합니다.");
+     router.push({ 
+       name: 'login', 
+       query: { redirect: router.currentRoute.value.fullPath } 
+     });
+     return;
   }
   router.push({ name: 'freeboard-write' });
 };
@@ -89,67 +88,70 @@ const goToEdit = (id) => {
   router.push({ name: 'freeboard-modify', params: { id } });
 };
 
-const fetchPosts = async () => {
-  if (props.filterType === 'my-posts') {
-    // Map props.sortOrder ('desc'/'asc') to API values ('FAST'/'LATEST')
-    const apiSort = props.sortOrder === 'desc' ? 'FAST' : 'LATEST';
-    boardApi.getMyPostFreeBoardList(apiSort).then(res => {
-      if (res && res.list) {
-      // Merge: API list + Mock list
-      posts.value = [...res.list];
-      
-      // Store pagination info
-      pageInfo.value = {
-        pageNo: res.pageNo,
-        pageSize: res.pageSize,
-        totalCount: res.totalCount,
-        totalPage: res.totalPage,
-        startPage: res.startPage,
-        endPage: res.endPage,
-        prev: res.prev,
-        next: res.next
-      };
-    } else if (res.data) {
-       // Fallback for structure mismatch if interceptor changes
-       const list = res.data.content || res.data.data || [];
-       posts.value = [...list];
-    }
-    }).catch(err => {
-      console.error(err);
-      alert(err.message);
-    });
-    return;
-  }
-
+const fetchPosts = async (isLoadMore = false) => {
+  isLoading.value = true;
+  
   try {
-    const sortValue = activeFilter.value === 'popular' ? 'POPULAR' : 'FAST';
-    const res = await boardApi.getFreeBoardList(sortValue);
-    
-    // Response structure handling
-    if (res && res.list) {
-      // Merge: API list + Mock list
-      posts.value = [...res.list];
-      
-      // Store pagination info
-      pageInfo.value = {
-        pageNo: res.pageNo,
-        pageSize: res.pageSize,
-        totalCount: res.totalCount,
-        totalPage: res.totalPage,
-        startPage: res.startPage,
-        endPage: res.endPage,
-        prev: res.prev,
-        next: res.next
-      };
-    } else if (res.data) {
-       // Fallback for structure mismatch if interceptor changes
-       const list = res.data.content || res.data.data || [];
-       posts.value = [...list];
-    }
+      if (props.filterType === 'my-posts') {
+            // Free Board My Posts
+            const apiSort = props.sortOrder === 'desc' ? 'FAST' : 'LATEST';
+            const res = await boardApi.getMyPostFreeBoardList(apiSort);
+            
+            if (res && res.list) {
+              if (isLoadMore) {
+                posts.value = [...posts.value, ...res.list];
+              } else {
+                posts.value = [...res.list];
+              }
+              
+              pageInfo.value = {
+                pageNo: res.pageNo,
+                pageSize: res.pageSize,
+                totalCount: res.totalCount,
+                totalPage: res.totalPage,
+                startPage: res.startPage,
+                endPage: res.endPage,
+                prev: res.prev,
+                next: res.next
+              };
+            }
+      } else {
+        // Normal List (Not My Posts) - Keeping existing logic regarding Sort
+        const sortValue = activeFilter.value === 'popular' ? 'POPULAR' : 'FAST';
+        const res = await boardApi.getFreeBoardList(sortValue);
+        
+        if (res && res.list) {
+          if (isLoadMore) {
+            posts.value = [...posts.value, ...res.list];
+          } else {
+            posts.value = [...res.list];
+          }
+          
+          pageInfo.value = {
+            pageNo: res.pageNo,
+            pageSize: res.pageSize,
+            totalCount: res.totalCount,
+            totalPage: res.totalPage,
+            startPage: res.startPage,
+            endPage: res.endPage,
+            prev: res.prev,
+            next: res.next
+          };
+        }
+      }
   } catch (error) {
     console.error('Error fetching board list:', error);
-    // Even on error, show mock data
-    posts.value = [];
+    if (!isLoadMore) posts.value = [];
+    alert(error.message);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const loadMore = () => {
+  if (pageInfo.value.next && !isLoading.value) {
+    pageInfo.value.pageNo++;
+    fetchPosts(true);
   }
 };
 
@@ -158,17 +160,25 @@ onMounted(() => {
 });
 
 watch(activeFilter, () => {
+  pageInfo.value.pageNo = 1;
   fetchPosts();
 });
 
 watch(() => props.sortOrder, () => {
   if (props.filterType === 'my-posts') {
+    pageInfo.value.pageNo = 1;
     fetchPosts();
   }
 });
 
 const displayPosts = computed(() => {
   return posts.value;
+});
+
+defineExpose({
+  loadMore,
+  isLoading,
+  pageInfo
 });
 </script>
 

@@ -36,6 +36,7 @@ const props = defineProps({
     type: Object,
     required: true,
     default: () => ({
+      no: '',
       name: '',
       description: '',
       images: [],
