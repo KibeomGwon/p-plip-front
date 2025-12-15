@@ -8,12 +8,14 @@ export const attractionApi = {
       lng: lng,
       pageNum: pageNum || 1,
       pageSize: pageSize || 10,
-      m : m || 1000,       // m 거리
+      m: m || 1000,       // m 거리
       contentTypes: contentTypes,
     }
   }),
   getAttractionsBySuggestion: () => api.get("/trip/attraction/ai"),
   getAttractionById: (id) => api.get(`/trip/attraction/${id}`),
   getRegions: () => api.get("/trip/attraction/region"),
-  getAttractionsByRegion: (data) => api.get(`/trip/attraction/suggest/sido-guguns`, {params: data}),
+  getAttractionsByRegion: (data) => api.get(`/trip/attraction/suggest/sido-guguns`, { params: data }),
+  getSearchHistory: (params) => api.get("/trip/attraction/search-history", { params }),
+  deleteSearchHistory: (id) => api.delete(`/trip/attraction/search-history/${id}`),
 };

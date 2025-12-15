@@ -26,7 +26,7 @@
             @dragenter.prevent="onDragEnter(index)"
             @drop="onDrop(index)"
           >
-            <img :src="img.url || getImageUrl(img.name)" alt="Preview" class="preview-img" />
+            <img :src="img.url || getImageUrl(img)" alt="Preview" class="preview-img" />
             <button class="remove-btn" @click="removeImage(index)">×</button>
           </div>
           
@@ -147,6 +147,7 @@ onMounted(() => {
             id: img.id,
             url: img.url,
             name: img.name, 
+            path: img.path,
             status: 'EXISTING'});
         });
       }
@@ -207,15 +208,16 @@ const onCrop = async (blob) => {
     const res = await fileApi.uploadFile(formData, IMAGE_TYPE.FREE_BOARD).then(res => {
       console.log(res);
       const fileData = res;
-      const fileBaseUrl = import.meta.env.VITE_FILE_BASE_URL || '';
+      const fileBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || '';
       // Ensure slash between base and path if needed. Assuming base doesn't end with slash or path doesn't start.
       // safely join:
-      const fullUrl = `${fileBaseUrl}/${fileData.name}`;
+      const fullUrl = `${fileBaseUrl}${fileData.path}`;
       
       croppedImages.value.push({
         id: fileData.id,
         url: fullUrl,
         name: fileData.name,
+        path: fileData.path,
         status: 'NEW'
       });
       addedImgs.value.push({id: fileData.id, status: 'NEW'});

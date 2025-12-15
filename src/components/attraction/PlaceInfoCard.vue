@@ -1,11 +1,11 @@
 <template>
   <div class="content-card">
     <div class="title-row">
-      <h1 class="place-title">{{ formattedTitle }}</h1>
-      <button class="review-link" @click="goToReview">
-        리뷰 {{ place.reviewCnt || 0 }}개 <span class="material-icons">></span>
-      </button>
+      <h1 class="place-title">{{ place.name }}</h1>
     </div>
+    <button class="review-link" @click="goToReview">
+      리뷰 {{ place.reviewCnt || 0 }}개 <span class="material-icons">></span>
+    </button>
     <div class="description-wrapper">
       <p class="place-description" :class="{ 'expanded': isExpanded }">
         {{ place.description }}
@@ -23,11 +23,15 @@
       <span v-for="tag in place.tags" :key="tag" class="tag">#{{ tag }}</span>
     </div>
   </div>
+  <div>
+    <PlaceActionButtons :place="place" />
+  </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import PlaceActionButtons from './PlaceActionButtons.vue';
 
 const props = defineProps({
   place: {
@@ -47,13 +51,6 @@ const router = useRouter();
 const route = useRoute();
 const isExpanded = ref(false);
 
-const formattedTitle = computed(() => {
-  const name = props.place.name || '';
-  if (name.length > 8) {
-    return name.replace(/\s+/g, '\n');
-  }
-  return name;
-});
 
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value;
@@ -92,7 +89,7 @@ const goToReview = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 
 .review-link {
@@ -105,6 +102,7 @@ const goToReview = () => {
   font-weight: 600;
   cursor: pointer;
   padding: 0;
+  margin-bottom: 12px;
 }
 
 .review-link .material-icons {

@@ -3,8 +3,7 @@
     <div class="review-header">
       <div class="user-profile">
         <div class="avatar" :style="{ backgroundColor: review.avatarColor }">
-          <img v-if="review.avatarUrl" :src="review.avatarUrl" alt="User Avatar" />
-          <span v-else>{{ review.author[0] }}</span>
+          <img :src="review.avatarUrl ? getImageUrl(review.avatarUrl) : defaultImage" alt="User Avatar" />
         </div>
         <span class="username">{{ review.author }}</span>
       </div>
@@ -41,13 +40,16 @@
 <script setup>
 import { computed, ref } from 'vue'; // Added ref
 import ImageCarousel from '@/components/common/ImageCarousel.vue';
-import { useImages } from '@/composables/useImage';
+import { useImages, useImage } from '@/composables/useImage';
 import { useRelativeTime } from '@/composables/useRelativeTime';
 import { reviewApi } from '@/api/review';
 import { fileApi } from '@/api/file';
+import { useDefaultImage } from '@/composables/useDefaultImage';
 
 const { getImagesUrl } = useImages();
+const { getImageUrl } = useImage();
 const { formatTime } = useRelativeTime();
+const defaultImage = useDefaultImage();
 
 const emit = defineEmits(['delete', 'edit']);
 

@@ -10,6 +10,9 @@
 
     <!-- Grid -->
     <div class="post-grid">
+      <div v-if="!isLoading && displayPosts.length === 0" class="empty-state">
+        <p>아직 작성된 글이 없습니다.</p>
+      </div>
       <FreeBoardListItem
         v-for="post in displayPosts"
         :key="post.id"
@@ -219,5 +222,14 @@ defineExpose({
 
 .write-fab:active {
   transform: scale(0.95);
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  color: #888;
+  font-size: 14px;
 }
 </style>

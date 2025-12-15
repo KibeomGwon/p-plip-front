@@ -13,6 +13,9 @@
       </div>
 
       <div class="review-list">
+        <div v-if="!isLoading && reviews.length === 0" class="empty-state">
+          <p>아직 리뷰가 없습니다.</p>
+        </div>
         <PlaceReviewItem 
           v-for="review in reviews" 
           :key="review.id" 
@@ -249,5 +252,15 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 200px;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #888;
+  font-size: 15px;
 }
 </style>

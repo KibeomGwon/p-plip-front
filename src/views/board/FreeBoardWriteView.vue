@@ -78,7 +78,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 import ImageCropper from '@/components/common/ImageCropper.vue';
 import { boardApi } from '@/api/board';
-import { fileApi } from '@/api/file';
+import { fileApi, IMAGE_TYPE } from '@/api/file';
 
 import { useAuthStore } from '@/stores/auth';
 
@@ -139,15 +139,16 @@ const onCrop = async (blob) => {
     const res = await fileApi.uploadFile(formData, IMAGE_TYPE.FREE_BOARD).then(res => {
       console.log(res);
       const fileData = res;
-      const fileBaseUrl = import.meta.env.VITE_FILE_BASE_URL || '';
+      const fileBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || '';
       // Ensure slash between base and path if needed. Assuming base doesn't end with slash or path doesn't start.
       // safely join:
-      const fullUrl = `${fileBaseUrl}/${fileData.name}`;
+      const fullUrl = `${fileBaseUrl}${fileData.path}`;
       
       croppedImages.value.push({
         id: fileData.id,
         url: fullUrl,
         name: fileData.name,
+        path: fileData.path,
       });
     });
   } catch (err) {

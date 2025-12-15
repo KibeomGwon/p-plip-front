@@ -8,6 +8,9 @@
     </div>
 
     <div class="notice-list">
+      <div v-if="!isLoading && sortedNotices.length === 0" class="empty-state">
+        <p>아직 작성된 글이 없습니다.</p>
+      </div>
       <div v-for="notice in sortedNotices" :key="notice.id" class="notice-item" @click="goToDetail(notice.id)">
         <div class="notice-tag">공지</div>
         <h3 class="notice-title">{{ notice.title }}</h3>
@@ -56,12 +59,14 @@ const sortOptions = [
 ];
 
 const notices = ref([]);
+const isLoading = ref(false);
 
 watch(() => props.sortOrder, (newVal) => {
     currentSort.value = newVal;
 });
 
 const getNotices = async () => {
+  isLoading.value = true;
   try {
     let res;
     if (props.filterType === 'my-posts') {
@@ -73,6 +78,8 @@ const getNotices = async () => {
     notices.value = Array.isArray(res) ? res : (res.list || []);
   } catch (err) {
     console.error(err);
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -179,5 +186,14 @@ const goToWrite = () => {
 
 .write-fab:active {
   transform: scale(0.95);
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  color: #888;
+  font-size: 14px;
 }
 </style>

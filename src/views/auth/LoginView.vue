@@ -57,6 +57,9 @@ const handleLogin = async () => {
     }
   }).catch(err => {
     console.error(err);
+    if (err.code==101) {
+      alert(err.message);
+    }
   });
 };
 

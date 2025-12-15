@@ -149,8 +149,9 @@ watch(() => props.show, (newVal) => {
       props.review.photos.forEach(img => {
         croppedImages.value.push({
           id: img.id,
-          url: '', 
+          url: getImageUrl(img.path), 
           name: img.name,
+          path: img.path,
           status: 'EXISTING'
         });
       });
@@ -178,12 +179,13 @@ const onCrop = async (blob) => {
     formData.append('file', blob, fileName);
 
     const res = await fileApi.uploadFile(formData, "REVIEW");
-    const fileBaseUrl = import.meta.env.VITE_FILE_BASE_URL || '';
-    const fullUrl = `${fileBaseUrl}/${res.name}`;
+    const fileBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || '';
+    const fullUrl = `${fileBaseUrl}${res.path}`;
     const newImg = {
       id: res.id,
       url: fullUrl,
       name: res.name,
+      path: res.path,
       status: 'NEW'
     };
     croppedImages.value.push(newImg);
@@ -208,20 +210,6 @@ const removeImage = (index) => {
   if (img.status === 'EXISTING') {
     removedImgs.value.push({ id: img.id, status: 'REMOVE' });
   } else if (img.status === 'NEW') {
-     // If removing a new image from the list, we should consider it 'removed' from the session context?
-     // Actually, if we remove it from the list, it's basically orphaned if we don't clean it up.
-     // But cleanupFiles handles addedImgs.
-     // Ideally we should delete it nicely now or let cleanupFiles handle it?
-     // For simplicity, we keep it in addedImgs (so it gets deleted on Cancel), 
-     // BUT if we Submit, we only send 'files'.
-     // Wait, if I upload NEW, then remove it from list. It is still in addedImgs.
-     // If I then Save, addedImgs are NOT deleted. They become orphans on server.
-     // Fix: If removing NEW image, delete immediately?
-     // Or remove from addedImgs?
-     // Let's delete immediately for NEW images to keep it clean.
-     if (img.id) fileApi.deleteFile(img.id, "REVIEW").catch(e => console.error(e));
-     
-     // Remove from addedImgs list too to prevent double delete on close
      const addedIndex = addedImgs.value.findIndex(a => a.id === img.id);
      if (addedIndex > -1) addedImgs.value.splice(addedIndex, 1);
   }
@@ -337,7 +325,7 @@ const handleSave = () => {
   display: flex;
   gap: 12px;
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding: 12px;
   margin-bottom: 16px;
 }
 

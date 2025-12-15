@@ -8,9 +8,7 @@
 
     <!-- Comment Input Section -->
     <div class="comment-input-section" v-if="authStore.isLoggedIn">
-      <div class="current-user-avatar">
-        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="Me" class="avatar-img">
-      </div>
+
       <div class="input-wrapper">
         <input 
           :value="newComment"
@@ -59,9 +57,10 @@
 <script setup>
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+
+import { useRelativeTime } from '@/composables/useRelativeTime';
 import { useImage } from '@/composables/useImage';
 import { useDefaultImage } from '@/composables/useDefaultImage';
-import { useRelativeTime } from '@/composables/useRelativeTime';
 
 const authStore = useAuthStore();
 const { getImageUrl } = useImage();
@@ -210,20 +209,7 @@ const onDelete = (comment) => {
   align-items: flex-start;
 }
 
-.comment-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: #555;
-  flex-shrink: 0;
-  overflow: hidden;
-}
+
 
 .comment-content {
   flex: 1;
@@ -274,4 +260,18 @@ const onDelete = (comment) => {
   color: #666;
 }
 
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: #f0f0f0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 </style>

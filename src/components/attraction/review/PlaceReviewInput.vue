@@ -140,13 +140,14 @@ const onCrop = async (blob) => {
     formData.append('file', blob, fileName);
 
     const res = await fileApi.uploadFile(formData, "REVIEW");
-    const fileBaseUrl = import.meta.env.VITE_FILE_BASE_URL || '';
-    const fullUrl = `${fileBaseUrl}/${res.name}`;
+    const fileBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || '';
+    const fullUrl = `${fileBaseUrl}${res.path}`;
     
     files.value.push({
       id: res.id,
       url: fullUrl,
-      name: res.name
+      name: res.name,
+      path: res.path
     });
   } catch (err) {
     console.error(err);

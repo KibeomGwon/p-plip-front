@@ -147,8 +147,9 @@ const fetchReviews = async () => {
   }
 };
 
-onMounted(() => {
-  fetchReviews();
+onMounted(async () => {
+  await fetchReviews();
+  console.log(reviews.value);
 });
 
 watch(sortOrder, () => {
@@ -173,7 +174,8 @@ const getReviewThumbnail = (review) => {
         // photos objects often have 'name' or full 'path' depending on API.
         // Review API normally returns reviewImages with 'name'.
         // getImageUrl handles appending base URL if needed.
-        return getImageUrl(photo.name || photo.path);
+        console.log(photo);
+        return getImageUrl(photo.path);
     }
     // Fallback? Maybe a placeholder or empty
     return 'https://via.placeholder.com/120?text=No+Image';

@@ -134,13 +134,14 @@ const onCrop = async (blob) => {
     // Assuming NOTICE_BOARD is valid or consistent key. Let's use NOTICE_BOARD for logic correctness.
     const res = await fileApi.uploadFile(formData, "NOTICE").then(res => {
       const fileData = res;
-      const fileBaseUrl = import.meta.env.VITE_FILE_BASE_URL || '';
-      const fullUrl = `${fileBaseUrl}/${fileData.name}`;
+      const fileBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || '';
+      const fullUrl = `${fileBaseUrl}${fileData.path}`;
       
       croppedImages.value.push({
         id: fileData.id,
         url: fullUrl,
         name: fileData.name,
+        path: fileData.path,
       });
     });
   } catch (err) {
