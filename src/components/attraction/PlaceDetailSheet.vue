@@ -9,7 +9,10 @@
       </button>
     </div>
     <div class="modal-body">
-      <PlaceDetailContent :place="place" :visible="false" @close="$emit('close')" />
+      <PlaceDetailContent :place="place" :visible="false" :hide-actions="hideActions" @close="$emit('close')" />
+    </div>
+    <div class="modal-footer" v-if="$slots.footer">
+      <slot name="footer"></slot>
     </div>
   </div>
 </template>
@@ -21,6 +24,10 @@ defineProps({
   place: {
     type: Object,
     required: true
+  },
+  hideActions: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -83,5 +90,11 @@ defineEmits(['close']);
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.modal-footer {
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #f0f0f0;
 }
 </style>

@@ -2,7 +2,7 @@
   <AppPage class="todo-list-page">
     <!-- UI Overlay (Sticky) -->
     <div class="ui-overlay">
-      <button class="fab-btn" @click="openCreateModal">
+      <button class="fab-btn" @click="openMapSearchWindow">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
@@ -109,6 +109,15 @@
        </button>
     </div>
 
+    <!-- Full Screen Search Overlay -->
+    <div v-if="isSearchOpen" class="search-view-overlay">
+        <AttractionMapSearchView 
+            :existing-items="todoList"
+            @add-item="onAddItem"
+            @close="isSearchOpen = false"
+        />
+    </div>
+
   </AppPage>
 </template>
 
@@ -121,6 +130,7 @@ import PlanMapModal from '@/components/plan/PlanMapModal.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
 import AppPage from '@/components/common/AppPage.vue';
 import { usePlanStore } from '@/stores/plan';
+import AttractionMapSearchView from '@/views/attraction/AttractionMapSearchView.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -138,6 +148,7 @@ const planTitle = ref('여행 계획 상세'); // Future: Fetch plan title from 
 const scrollContainer = ref(null);
 const isModalOpen = ref(false);
 const isMapModalOpen = ref(false);
+const isSearchOpen = ref(false);
 const modalMode = ref('create'); // 'create' | 'edit'
 const selectedTodo = ref({});
 const isReadOnlyExceptDesc = ref(false);
@@ -398,23 +409,60 @@ const saveAllChanges = async () => {
   }
 };
 
-// Auto Scroll to Current
+// Open Map Search Window (Modal)
+const openMapSearchWindow = () => {
+  isSearchOpen.value = true;
+};
+
+const onAddItem = (item) => {
+    // Generate new ID locally
+    const newId = todoList.value.length > 0 ? Math.max(...todoList.value.map(t => t.id || 0)) + 1 : 1;
+    
+    // Add to list
+    todoList.value.push({
+        ...item,
+        id: newId,
+        planId: Number(route.params.id)
+    });
+    
+    // Re-sort
+    sortListByTime();
+    
+    // Note: No need to sync to store draft anymore, we just keep local state
+};
+
 onMounted(async () => {
   const planId = route.params.id;
   if (planId) {
     const data = await planStore.fetchPlanDetails(planId);
-    // Map API data to local format
-    // Convert API UTC -> Internal Local Time
-    todoList.value = data.map(item => ({
-      ...item,
-      startAt: toLocalISOString(item.willStartAt),
-      endAt: toLocalISOString(item.willEndAt),
-      durationMinutes: Math.floor((new Date(item.willEndAt) - new Date(item.willStartAt)) / 60000),
-      image: item.attractionImage,
-      latitude: item.latitude,
-      longitude: item.longitude
-    }));
-    sortListByTime(); // Ensure sorted after fetch
+    
+    // Map API data (or Store data) to local format
+    todoList.value = data.map(item => {
+        // Determine if item is already in local format (has startAt) or API format (willStartAt)
+        const isLocal = !!item.startAt;
+        const start = isLocal ? item.startAt : toLocalISOString(item.willStartAt);
+        const end = isLocal ? item.endAt : toLocalISOString(item.willEndAt);
+        
+        // Calculate duration safely
+        let duration = item.durationMinutes;
+        if (duration === undefined) {
+             const sDate = new Date(isLocal ? start : item.willStartAt);
+             const eDate = new Date(isLocal ? end : item.willEndAt);
+             duration = Math.floor((eDate - sDate) / 60000);
+        }
+
+        return {
+          ...item,
+          startAt: start,
+          endAt: end,
+          durationMinutes: duration,
+          image: item.image || item.attractionImage,
+          latitude: item.latitude,
+          longitude: item.longitude
+        };
+    });
+    
+    sortListByTime(); 
     originalTodoList.value = JSON.parse(JSON.stringify(todoList.value));
 
     initSelectedDate();
@@ -423,6 +471,8 @@ onMounted(async () => {
   await nextTick();
   scrollToCurrent();
 });
+
+
 
 const scrollToCurrent = () => {
   const current = todoList.value.find(item => isCurrentItem(item));
@@ -788,6 +838,19 @@ const scrollToCurrent = () => {
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 149, 246, 0.3);
   transition: transform 0.2s;
+}
+
+.search-view-overlay {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px; /* Match App.vue max-width */
+    height: 100%; /* Or 100vh? Fixed usually needs explicit height */
+    bottom: 0;
+    z-index: 9999;
+    background: white;
 }
 
 .save-btn:active {

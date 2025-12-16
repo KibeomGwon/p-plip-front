@@ -15,7 +15,9 @@
     </div>
 
     <!-- Content Card -->
-    <PlaceInfoCard :place="place" @close="$emit('close')" />
+    <PlaceInfoCard :place="place" @close="$emit('close')">
+      <template #footer v-if="hideActions"></template>
+    </PlaceInfoCard>
 
   </div>
 </template>
@@ -41,6 +43,10 @@ const props = defineProps({
     type: Boolean,
     required: true,
     default: true
+  },
+  hideActions: {
+    type: Boolean,
+    default: false
   }
 });
 

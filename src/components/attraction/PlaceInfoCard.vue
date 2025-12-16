@@ -19,8 +19,10 @@
       <span v-for="tag in place.tags" :key="tag" class="tag">#{{ tag }}</span>
     </div>
   </div>
-  <div>
-    <PlaceActionButtons :place="place" @close="$emit('close')" />
+  <div class="card-footer">
+    <slot name="footer">
+      <PlaceActionButtons :place="place" @close="$emit('close')" />
+    </slot>
   </div>
 </template>
 
