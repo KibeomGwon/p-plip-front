@@ -237,7 +237,16 @@ const getCardStatusClass = (item) => {
   }
 };
 
-// Logic: Time Recalculation after Drag
+// Helper: Timezone Conversion
+// toUTC Removed
+
+const toLocalISOString = (dateObjOrStr) => {
+  if (!dateObjOrStr) return '';
+  const date = new Date(dateObjOrStr);
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+};
+
 // Logic: Time Recalculation after Drag
 const onDragEnd = () => {
   if (filteredTodoList.value.length === 0) return;
@@ -248,29 +257,26 @@ const onDragEnd = () => {
   let currentTime = anchorTime; // Start from the earliest time in this date group
 
   // Update only the items in the current filtered view
-  // We need to update them in the main todoList as well (by reference since filteredList items are from todoList objects)
-  // Actually, computed set might have created new array but items are same objects? 
-  // v-model on draggable with computed 'set' replaces the array in todoList. items are likely same references if we didn't clone.
-
   filteredTodoList.value.forEach((item) => {
     const start = new Date(currentTime);
     const end = new Date(start.getTime() + item.durationMinutes * 60000);
 
-    item.startAt = start.toISOString();
-    item.endAt = end.toISOString();
+    // Store as Local ISO String to maintain internal consistency
+    item.startAt = toLocalISOString(start);
+    item.endAt = toLocalISOString(end);
 
     currentTime = end.getTime() + 30 * 60000;
   });
 
-  // Force update todoList to trigger reactivity if needed, though objects mutated in place usually works
-  // But since we depend on startAt string for filtering, mutating it might cause issues?
-  // It stays in the same date, so it should be fine.
   sortListByTime(); // Global sort to keep data clean
 };
 
-const deleteTodo = (id, index) => {
+const deleteTodo = (id) => {
   if (confirm('정말 삭제하시겠습니까?')) {
-    todoList.value.splice(index, 1);
+    const index = todoList.value.findIndex(item => item.id === id);
+    if (index !== -1) {
+      todoList.value.splice(index, 1);
+    }
   }
 };
 
@@ -279,8 +285,9 @@ const openCreateModal = () => {
   isReadOnlyExceptDesc.value = false;
   selectedTodo.value = {
     // Default to start at selected date's 09:00 or current time
-    startAt: selectedDate.value ? `${selectedDate.value}T09:00:00` : new Date().toISOString(),
-    endAt: selectedDate.value ? `${selectedDate.value}T10:00:00` : new Date().toISOString(),
+    // Use Local Time String
+    startAt: selectedDate.value ? `${selectedDate.value}T09:00` : toLocalISOString(new Date()),
+    endAt: selectedDate.value ? `${selectedDate.value}T10:00` : toLocalISOString(new Date(Date.now() + 60 * 60 * 1000)),
   };
   isModalOpen.value = true;
 };
@@ -323,18 +330,12 @@ const onSaveTodo = (formData) => {
       ...newData
     };
   } else {
-    // For new items, we need a temp ID if not provided by server yet.
-    // However, if we are batch saving, we might send 0 or null as ID for new items?
-    // Check API spec: PUT body has IDs. If ID is 0, backend probably treats as new.
-    // Let's assume ID generation/mocking for local list compatibility.
     const newId = todoList.value.length > 0 ? Math.max(...todoList.value.map(t => t.id || 0)) + 1 : 1;
-
-    // Ensure numeric ID to avoid clashes
 
     todoList.value.push({
       id: newId,
-      planId: Number(route.params.id), // Ensure planId is set
-      image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200&h=200&fit=crop', // Default image
+      planId: Number(route.params.id),
+      image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200&h=200&fit=crop',
       ...newData
     });
   }
@@ -346,7 +347,16 @@ const onSaveTodo = (formData) => {
 
 const sortListByTime = () => {
   todoList.value.sort((a, b) => {
-    return new Date(a.startAt) - new Date(b.startAt);
+    const timeA = new Date(a.startAt).getTime();
+    const timeB = new Date(b.startAt).getTime();
+    const validA = !isNaN(timeA);
+    const validB = !isNaN(timeB);
+
+    if (!validA && !validB) return 0;
+    if (!validA) return 1; // Invalid dates go to end
+    if (!validB) return -1;
+
+    return timeA - timeB;
   });
 };
 
@@ -357,31 +367,32 @@ const isDirty = computed(() => {
 
 const saveAllChanges = async () => {
   if (confirm('모든 변경사항을 저장하시겠습니까?')) {
-    // Map data to match API expectation if necessary.
-    // API Expects: planId, attractionId, title, description, willStartAt, willEndAt
-    // Local: startAt, endAt. Need mapping.
+    // Map data to match API expectation
+    // Convert Internal Local Time -> API UTC
     const payload = todoList.value.map(item => ({
       id: item.id,
       planId: Number(route.params.id),
-      attractionId: item.attractionId || 0, // Fallback if missing
+      attractionId: item.attractionId || 0,
       title: item.title,
       description: item.description || '',
-      willStartAt: item.startAt || item.willStartAt, // Handle both
-      willEndAt: item.endAt || item.willEndAt
+      // Send Local Time directly (Backend expects KST)
+      willStartAt: item.startAt + (item.startAt.length === 16 ? ':00' : ''),
+      willEndAt: item.endAt + (item.endAt.length === 16 ? ':00' : '')
     }));
 
     const result = await planStore.savePlanDetails(route.params.id, payload);
     if (result) {
-      // Update local list with server response (which might have corrected IDs/times)
-      // Map response back to local format
+      // Update local list with server response
+      // Convert API UTC -> Internal Local Time
       todoList.value = result.map(item => ({
         ...item,
-        startAt: item.willStartAt,
-        endAt: item.willEndAt,
+        startAt: toLocalISOString(item.willStartAt),
+        endAt: toLocalISOString(item.willEndAt),
         // Calculate duration
         durationMinutes: Math.floor((new Date(item.willEndAt) - new Date(item.willStartAt)) / 60000),
-        image: item.attractionImage || item.image // Use API image or fallback
+        image: item.attractionImage || item.image
       }));
+      sortListByTime(); // Ensure sorted after save
       originalTodoList.value = JSON.parse(JSON.stringify(todoList.value));
     }
   }
@@ -393,15 +404,17 @@ onMounted(async () => {
   if (planId) {
     const data = await planStore.fetchPlanDetails(planId);
     // Map API data to local format
+    // Convert API UTC -> Internal Local Time
     todoList.value = data.map(item => ({
       ...item,
-      startAt: item.willStartAt,
-      endAt: item.willEndAt,
+      startAt: toLocalISOString(item.willStartAt),
+      endAt: toLocalISOString(item.willEndAt),
       durationMinutes: Math.floor((new Date(item.willEndAt) - new Date(item.willStartAt)) / 60000),
       image: item.attractionImage,
       latitude: item.latitude,
       longitude: item.longitude
     }));
+    sortListByTime(); // Ensure sorted after fetch
     originalTodoList.value = JSON.parse(JSON.stringify(todoList.value));
 
     initSelectedDate();

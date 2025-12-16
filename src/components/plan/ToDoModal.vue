@@ -2,7 +2,7 @@
   <div v-if="isVisible" class="modal-overlay" @click.self="closeModal">
     <div class="modal-content">
       <h3 class="modal-title">{{ isEditMode ? 'ToDo 수정' : 'ToDo 생성' }}</h3>
-      
+
       <div class="form-group">
         <label>제목</label>
         <input v-model="formData.title" type="text" class="form-input" placeholder="일정을 입력하세요"
@@ -72,16 +72,29 @@ watch(() => props.isVisible, (newVal) => {
     if (props.mode === 'edit' && props.initialData) {
       // Deep copy and format dates
       const data = JSON.parse(JSON.stringify(props.initialData));
-      if (data.startAt) data.startAt = new Date(data.startAt).toISOString().slice(0, 16);
-      if (data.endAt) data.endAt = new Date(data.endAt).toISOString().slice(0, 16);
-      
+
+      const toLocalISOString = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const offset = date.getTimezoneOffset() * 60000;
+        return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+      };
+
+      if (data.startAt) data.startAt = toLocalISOString(data.startAt);
+      if (data.endAt) data.endAt = toLocalISOString(data.endAt);
+
       formData.value = data;
     } else {
       // Reset for create
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      const localNow = new Date(now.getTime() - offset);
+      const localNextHour = new Date(now.getTime() - offset + 60 * 60 * 1000);
+
       formData.value = {
         title: '',
-        startAt: new Date().toISOString().slice(0, 16), // Default to now
-        endAt: new Date(Date.now() + 60*60*1000).toISOString().slice(0, 16), // Default +1h
+        startAt: localNow.toISOString().slice(0, 16),
+        endAt: localNextHour.toISOString().slice(0, 16),
         description: ''
       };
     }
@@ -98,7 +111,7 @@ const handleSave = () => {
     alert('제목을 입력해주세요.');
     return;
   }
-  
+
   emit('save', { ...formData.value });
 };
 </script>
@@ -111,7 +124,7 @@ const handleSave = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,13 +138,20 @@ const handleSave = () => {
   max-width: 340px;
   border-radius: 20px;
   padding: 24px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes modal-pop {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .modal-title {
@@ -160,7 +180,7 @@ const handleSave = () => {
   border-radius: 12px;
   font-size: 15px;
   transition: border-color 0.2s;
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 .form-input:focus {
