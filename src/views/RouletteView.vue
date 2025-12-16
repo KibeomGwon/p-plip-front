@@ -8,12 +8,8 @@
     <div class="content-wrapper">
       <!-- Grid View (Initial State) -->
       <div v-if="!isSpinning" class="grid-container">
-        <div 
-          v-for="(item, index) in currentItems" 
-          :key="index" 
-          class="grid-item"
-          :style="{ borderColor: colors[index % colors.length] }"
-        >
+        <div v-for="(item, index) in currentItems" :key="index" class="grid-item"
+          :style="{ borderColor: colors[index % colors.length] }">
           {{ item }}
         </div>
       </div>
@@ -22,31 +18,19 @@
       <div v-else class="roulette-window">
         <!-- Center Indicator -->
         <div class="indicator"></div>
-        
-        <div 
-          class="roulette-strip" 
-          :style="{ transform: `translateX(${-currentOffset}px)` }"
-        >
-          <div 
-            v-for="(item, index) in rouletteItems" 
-            :key="index" 
-            class="roulette-item"
-            :class="{ 'active': index === targetIndex && isFinished }"
-            :style="{ 
+
+        <div class="roulette-strip" :style="{ transform: `translateX(${-currentOffset}px)` }">
+          <div v-for="(item, index) in rouletteItems" :key="index" class="roulette-item"
+            :class="{ 'active': index === targetIndex && isFinished }" :style="{
               backgroundColor: colors[index % colors.length],
-            }"
-          >
+            }">
             {{ item }}
           </div>
         </div>
       </div>
-      
+
       <div class="action-area">
-        <button 
-          class="spin-btn" 
-          @click="handleSpinClick" 
-          :disabled="isSpinning"
-        >
+        <button class="spin-btn" @click="handleSpinClick" :disabled="isSpinning">
           {{ spinButtonText }}
         </button>
       </div>
@@ -62,20 +46,33 @@
           <span class="location">{{ finalLocationString }}</span>
         </div>
         <p class="recommendation-text">해당 지역에서의 여행 계획을<br>추천받아 보시겠어요?</p>
-        
+
+        <div class="date-selection-container">
+          <div class="date-inputs">
+            <input type="date" v-model="startDate" class="date-input">
+            <span class="separator">~</span>
+            <input type="date" v-model="endDate" class="date-input">
+          </div>
+        </div>
+
         <button class="ai-recommend-btn" @click="openAiChat">
           <div class="ai-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" fill="white" fill-opacity="0.2"/>
-              <path d="M12 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-2 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm4 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" fill="white"/>
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" fill="white"
+                fill-opacity="0.2" />
+              <path
+                d="M12 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-2 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm4 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"
+                fill="white" />
             </svg>
-             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L14.39 8.26L21 9.27L15.92 13.73L17.5 20.22L12 16.77L6.5 20.22L8.08 13.73L3 9.27L9.61 8.26L12 2Z" fill="white"/>
-             </svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M12 2L14.39 8.26L21 9.27L15.92 13.73L17.5 20.22L12 16.77L6.5 20.22L8.08 13.73L3 9.27L9.61 8.26L12 2Z"
+                fill="white" />
+            </svg>
           </div>
           <span>AI 추천 받기</span>
         </button>
-        
+
         <button class="close-btn" @click="closeModal">닫기 / 다시하기</button>
       </div>
     </div>
@@ -91,6 +88,9 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import NavBar from '@/components/common/Navbar.vue';
 import { attractionApi } from '@/api/attraction';
+import { usePlanStore } from '@/stores/plan';
+
+const planStore = usePlanStore();
 
 // Data placeholders
 const regionData = ref({});
@@ -111,6 +111,10 @@ const isFinished = ref(false);
 const selectedProvince = ref('');
 const selectedDistrict = ref('');
 
+// Date Selection
+const startDate = ref('');
+const endDate = ref('');
+
 // Roulette Animation State
 const itemWidth = 100; // Width of each box in px
 const itemGap = 10;    // Gap between boxes in px
@@ -124,7 +128,7 @@ const selectedGugunCode = ref(null);
 const fetchRegions = async () => {
   try {
     const res = await attractionApi.getRegions();
-    
+    console.log(res);
     // 2-char Name Mapping
     const sidoMap = {
       '세종특별자치시': '세종',
@@ -149,24 +153,24 @@ const fetchRegions = async () => {
       res.forEach(item => {
         let sName = item.sido.sidoName;
         if (sidoMap[sName]) {
-            sName = sidoMap[sName];
+          sName = sidoMap[sName];
         } else {
-            sName = sName.substring(0, 2);
+          sName = sName.substring(0, 2);
         }
 
         const sCode = item.sido.sidoCode;
         newSidoCodeMap[sName] = sCode;
-        
+
         // Map Gugun names to 2 chars and store codes
         newRegionData[sName] = [];
         newGugunCodeMap[sName] = {};
 
         if (item.guguns) {
-            item.guguns.forEach(g => {
-                const gName = g.gugunName.substring(0, 2);
-                newRegionData[sName].push(gName);
-                newGugunCodeMap[sName][gName] = g.gugunCode;
-            });
+          item.guguns.forEach(g => {
+            const gName = g.gugunName.substring(0, 2);
+            newRegionData[sName].push(gName);
+            newGugunCodeMap[sName][gName] = g.gugunCode;
+          });
         }
       });
     }
@@ -213,6 +217,15 @@ const finalLocationString = computed(() => {
 
 onMounted(() => {
   fetchRegions();
+
+  // Init default dates
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayAfter = new Date(tomorrow);
+  dayAfter.setDate(dayAfter.getDate() + 1);
+
+  startDate.value = tomorrow.toISOString().split('T')[0];
+  endDate.value = dayAfter.toISOString().split('T')[0];
 });
 
 const handleSpinClick = () => {
@@ -232,9 +245,9 @@ const startRoulette = () => {
   // Repeat items mainly to have enough length for spinning visual
   // We need enough items to scroll for ~3 seconds.
   // Let's say we want to spin past around 50-80 items.
-  const repeatCount = 20; 
+  const repeatCount = 20;
   rouletteItems.value = [];
-  for(let i=0; i<repeatCount; i++) {
+  for (let i = 0; i < repeatCount; i++) {
     rouletteItems.value.push(...items);
   }
 
@@ -242,10 +255,10 @@ const startRoulette = () => {
   // We want to stop at a random item somewhere in the middle-end of the strip
   // to ensure we have enough "road" to scroll.
   const totalItems = rouletteItems.value.length;
-  const minIndex = Math.floor(totalItems * 0.6); 
+  const minIndex = Math.floor(totalItems * 0.6);
   const maxIndex = Math.floor(totalItems * 0.8);
   const targetIdx = Math.floor(Math.random() * (maxIndex - minIndex + 1)) + minIndex;
-  
+
   targetIndex.value = targetIdx;
 
   // Window width is roughly 300px or 100% of container (setup in CSS)
@@ -258,10 +271,10 @@ const startRoulette = () => {
   // Center is 150px.
   // Target position: (Index * Unit) + (Unit / 2).
   // Scroll Offset needed: TargetPosition - WindowCenter.
-  
+
   const unit = itemWidth + itemGap;
   const windowWidth = 300; // Fixed in CSS
-  const targetPos = (targetIdx * unit); 
+  const targetPos = (targetIdx * unit);
   // Adjust so item is centered:
   // With padding-left: 50% (150px), the strip starts at the center.
   // We want the item's CENTER to align with the window's CENTER (150px).
@@ -269,23 +282,23 @@ const startRoulette = () => {
   // We need to shift by 'offset' so that visual position is 150.
   // 150 = (150 + targetPos + 50) - offset
   // offset = targetPos + 50
-  
+
   const landingPosition = targetPos + (itemWidth / 2);
-  
+
   // Animation loop
   const duration = 3000;
   const startOffset = 0;
   // Make it start smoothly
-  
+
   const startTime = performance.now();
 
   const animate = (time) => {
     const elapsed = time - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    
+
     // Ease out quart
     const ease = 1 - Math.pow(1 - progress, 4);
-    
+
     currentOffset.value = startOffset + (landingPosition - startOffset) * ease;
 
     if (progress < 1) {
@@ -308,7 +321,7 @@ const determineResult = (result) => {
     const sCode = sidoCodeMap.value[result];
     selectedSidoCode.value = sCode;
     selectedGugunCode.value = null; // Reset gugun code for new province
-    
+
     // Check if it's a single step region
     if (singleStepRegionCodes.includes(sCode)) {
       setTimeout(() => {
@@ -317,7 +330,7 @@ const determineResult = (result) => {
     } else {
       // Proceed to Step 2
       setTimeout(() => {
-        step.value = 2; 
+        step.value = 2;
         currentOffset.value = 0;
       }, 500);
     }
@@ -326,24 +339,35 @@ const determineResult = (result) => {
     selectedDistrict.value = result;
     // Look up Gugun Code using Province and Gugun Name
     if (gugunCodeMap.value[selectedProvince.value] && gugunCodeMap.value[selectedProvince.value][result]) {
-        selectedGugunCode.value = gugunCodeMap.value[selectedProvince.value][result];
+      selectedGugunCode.value = gugunCodeMap.value[selectedProvince.value][result];
     }
     showFinalModal.value = true;
   }
 };
 
 const openAiChat = () => {
-  alert(`AI에게 ${finalLocationString.value} 여행 계획을 물어봅니다!`);
-  const data = {
-    sidoCode: selectedSidoCode.value,
-    gugunCode: selectedGugunCode.value,
-  };
+  if (!startDate.value || !endDate.value) {
+    alert('여행 기간을 선택해주세요.');
+    return;
+  }
 
-  attractionApi.getAttractionsByRegion(data).then((res) => {
-    console.log(res);
-  }).catch((err) => {
-    console.log(err);
-  });
+  if (startDate.value > endDate.value) {
+    alert('종료일은 시작일보다 빠를 수 없습니다.');
+    return;
+  }
+
+  console.log("View: Calling suggestRandomPlan with regionName:", finalLocationString.value);
+
+  planStore.suggestRandomPlan(
+    selectedSidoCode.value,
+    selectedGugunCode.value || 0,
+    startDate.value,
+    endDate.value,
+    finalLocationString.value
+  );
+
+  // Close modal immediately to allow user interaction
+  closeModal();
 };
 
 const closeModal = () => {
@@ -388,7 +412,8 @@ const closeModal = () => {
 
 .content-wrapper {
   width: 100%;
-  max-width: 360px; /* Constrain width for mobile look */
+  max-width: 360px;
+  /* Constrain width for mobile look */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -418,7 +443,7 @@ const closeModal = () => {
   border: 2px solid #ddd;
   font-weight: bold;
   color: #555;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   font-size: 14px;
 }
 
@@ -429,11 +454,12 @@ const closeModal = () => {
   height: 120px;
   background: white;
   border-radius: 16px;
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   border: 4px solid #333;
   display: flex;
-  align-items: center; /* Vertically center */
+  align-items: center;
+  /* Vertically center */
 }
 
 /* Red Arrow Indicator */
@@ -442,24 +468,26 @@ const closeModal = () => {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 0; 
-  height: 0; 
+  width: 0;
+  height: 0;
   border-left: 12px solid transparent;
   border-right: 12px solid transparent;
   border-top: 20px solid #E74C3C;
   z-index: 10;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .roulette-strip {
   display: flex;
-  gap: 10px; 
-  padding-left: 50%; /* Start somewhat offset if needed, but we handle it with script */
+  gap: 10px;
+  padding-left: 50%;
+  /* Start somewhat offset if needed, but we handle it with script */
   will-change: transform;
 }
 
 .roulette-item {
-  flex: 0 0 100px; /* Fixed width */
+  flex: 0 0 100px;
+  /* Fixed width */
   height: 80px;
   display: flex;
   align-items: center;
@@ -469,7 +497,7 @@ const closeModal = () => {
   font-size: 20px;
   font-weight: bold;
   color: white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .roulette-item.active {
@@ -511,7 +539,7 @@ const closeModal = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -526,7 +554,7 @@ const closeModal = () => {
   width: 100%;
   max-width: 320px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -552,6 +580,33 @@ const closeModal = () => {
   color: #666;
   margin-bottom: 24px;
   line-height: 1.5;
+}
+
+.date-selection-container {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.date-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #333;
+  width: 130px;
+}
+
+.separator {
+  color: #999;
+  font-weight: bold;
 }
 
 .ai-recommend-btn {

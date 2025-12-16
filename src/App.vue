@@ -31,6 +31,28 @@ body {
 }
 
 /* Custom Scrollbar Global removed to restore native auto-hide behavior */
+
+/* Global Twinkle Animation */
+.twinkle {
+  animation: twinkle-glow 1.5s infinite alternate;
+}
+
+@keyframes twinkle-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+    color: #2196F3;
+  }
+
+  50% {
+    box-shadow: 0 0 15px rgba(255, 235, 59, 0.8);
+    color: #FFC107;
+  }
+
+  100% {
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+    color: #2196F3;
+  }
+}
 </style>
 
 <style scoped>

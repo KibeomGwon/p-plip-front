@@ -6,13 +6,23 @@
                 <p class="modal-subtitle">여행의 테마나 특별한 요구사항을 알려주세요</p>
 
                 <div class="input-wrapper">
+                    <label class="input-label">여행 테마</label>
                     <textarea v-model="themeInput" placeholder="예: 힐링되는 숲속 산책, 아이들과 함께하는 체험 학습, 맛집 탐방 등"
                         class="theme-input" rows="3"></textarea>
                 </div>
 
+                <div class="input-wrapper">
+                    <label class="input-label">여행 기간</label>
+                    <div class="date-inputs">
+                        <input type="date" v-model="startDate" class="date-input">
+                        <span class="separator">~</span>
+                        <input type="date" v-model="endDate" class="date-input">
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button class="cancel-btn" @click="close">취소</button>
-                    <button class="confirm-btn" @click="confirm" :disabled="!themeInput.trim()">
+                    <button class="confirm-btn" @click="confirm" :disabled="!isValid">
                         계획 요청하기
                     </button>
                 </div>
@@ -22,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 const props = defineProps({
     modelValue: {
@@ -35,12 +45,26 @@ const emit = defineEmits(['update:modelValue', 'confirm']);
 
 const isVisible = ref(props.modelValue);
 const themeInput = ref("");
+const startDate = ref("");
+const endDate = ref("");
 
 watch(() => props.modelValue, (newVal) => {
     isVisible.value = newVal;
     if (newVal) {
         themeInput.value = ""; // Reset input on open
+        // Default dates: tomorrow and day after tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dayAfter = new Date(tomorrow);
+        dayAfter.setDate(dayAfter.getDate() + 1);
+
+        startDate.value = tomorrow.toISOString().split('T')[0];
+        endDate.value = dayAfter.toISOString().split('T')[0];
     }
+});
+
+const isValid = computed(() => {
+    return themeInput.value.trim() !== "" && startDate.value && endDate.value && startDate.value <= endDate.value;
 });
 
 const close = () => {
@@ -48,8 +72,12 @@ const close = () => {
 };
 
 const confirm = () => {
-    if (themeInput.value.trim()) {
-        emit('confirm', themeInput.value.trim());
+    if (isValid.value) {
+        emit('confirm', {
+            theme: themeInput.value.trim(),
+            startDate: startDate.value,
+            endDate: endDate.value
+        });
         close();
     }
 };
@@ -67,7 +95,6 @@ const confirm = () => {
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    /* Highest priority */
     padding: 24px;
     box-sizing: border-box;
 }
@@ -102,6 +129,34 @@ const confirm = () => {
     margin-bottom: 24px;
 }
 
+.input-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.date-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.separator {
+    color: #999;
+}
+
+/* ... existing styles ... */
 .theme-input {
     width: 100%;
     padding: 12px;
