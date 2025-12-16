@@ -11,42 +11,58 @@ export const usePlanStore = defineStore('plan', () => {
     const isFetchingPlans = ref(false);
     const toastStore = useToastStore();
 
-    const suggestPlan = async (attractionId, query = "") => {
+    const suggestPlan = async (attractionId, query = "", startDate, endDate) => {
         isGeneratingPlan.value = true;
         let loadingToastId = null;
 
         try {
-            // Persistent loading toast (10 minutes)
-            loadingToastId = toastStore.addToast('AI 계획 생성중... 🤖', 'info', 600000);
+            // Persistent loading toast removed or kept? User said "until response".
+            // We can keep the "Generating..." toast or remove it since we have the navbar animation.
+            // User: "respond with toast instead of alert when done".
+            // Also "while pending, navbar icon twinkles".
+            // So relying on navbar animation is better visual feedback than a persistent toast covering screen if the user wants to do other things.
+            // But a "Started" toast is good.
+            loadingToastId = toastStore.addToast('AI가 여행 계획을 생성하고 있습니다. (약 1분 소요)', 'info', 3000); // Short duration, just info
 
-            const response = await planApi.suggestPlan(attractionId, query);
+            // We don't need a long running toast blocking/showing if we have the icon.
+            // Actually, keep it simple.
+
+            const response = await planApi.suggestPlan(attractionId, query, startDate, endDate);
             console.log("suggestPlan response:", response);
 
-            // Remove loading toast before showing result
-            if (loadingToastId) toastStore.removeToast(loadingToastId);
-
             if (response) {
-                toastStore.addToast('AI 계획 생성이 완료되었습니다!', 'success');
-                // Future: Reload plans or add the new plan to local state
-
-                // Navigate to the newly created plan
-                // Assuming response contains the created plan object with 'id'
-                // Or if response is the plan itself
                 const newPlanId = response.id || response.planId;
-
-                if (newPlanId) {
-                    if (confirm('여행 계획이 생성되었습니다. 상세 페이지로 이동하시겠습니까?')) {
-                        router.push({ name: 'todo-list', params: { id: newPlanId } });
-                    }
-                }
+                toastStore.addToast('여행 계획 생성이 완료되었습니다! ✈️', 'success');
+                // Optional: We could emit an event or let the user navigate manually via the Plan tab.
             } else {
-                // If response is null/undefined but no error throw, obscure case
                 toastStore.addToast('계획 생성 응답이 올바르지 않습니다.', 'warning');
             }
         } catch (error) {
             console.error('Plan suggestion error:', error);
-            // Remove loading toast in error case too if not reached above
-            if (loadingToastId) toastStore.removeToast(loadingToastId);
+            toastStore.addToast('계획 생성 중 오류가 발생했습니다.', 'error');
+        } finally {
+            isGeneratingPlan.value = false;
+        }
+    };
+
+    const suggestRandomPlan = async (sidoCode, gugunCode, startDate, endDate, regionName) => {
+        console.log("Store: suggestRandomPlan called with", { sidoCode, gugunCode, startDate, endDate, regionName });
+        isGeneratingPlan.value = true;
+        let loadingToastId = null;
+        try {
+            loadingToastId = toastStore.addToast('AI가 랜덤 여행 계획을 생성하고 있습니다. 🎲', 'info', 3000);
+
+            const response = await planApi.suggestRandomPlan(sidoCode, gugunCode, startDate, endDate, regionName);
+            console.log("suggestRandomPlan response:", response);
+
+            if (response) {
+                const newPlanId = response.id || response.planId;
+                toastStore.addToast('여행 계획 생성이 완료되었습니다! 🎲', 'success');
+            } else {
+                toastStore.addToast('계획 생성 응답이 올바르지 않습니다.', 'warning');
+            }
+        } catch (error) {
+            console.error('Random Plan suggestion error:', error);
             toastStore.addToast('계획 생성 중 오류가 발생했습니다.', 'error');
         } finally {
             isGeneratingPlan.value = false;
@@ -153,6 +169,7 @@ export const usePlanStore = defineStore('plan', () => {
         plans,
         isFetchingPlans,
         suggestPlan,
+        suggestRandomPlan,
         fetchPlans,
         fetchPlanDetails,
         savePlanDetails,

@@ -46,9 +46,10 @@ const handleAiPlanRequest = () => {
   showThemeModal.value = true;
 };
 
-const handleThemeConfirm = (theme) => {
+const handleThemeConfirm = ({ theme, startDate, endDate }) => {
   if (props.place && props.place.no) {
-    planStore.suggestPlan(String(props.place.no), theme);
+    // Fire and forget - Store handles loading state and toast
+    planStore.suggestPlan(String(props.place.no), theme, startDate, endDate);
     emit('close');
   } else {
     console.warn("Place ID is missing");
