@@ -17,8 +17,6 @@
     <!-- Content Card -->
     <PlaceInfoCard :place="place" @close="$emit('close')" />
 
-    <!-- Action Buttons -->
-    <PlaceActionButtons v-if="visible" :place="place" @close="$emit('close')" />
   </div>
 </template>
 

@@ -18,7 +18,15 @@
     <!-- Header -->
     <AppHeader :title="planTitle">
       <template #right>
-        <div class="header-right"></div>
+        <div class="header-right">
+          <button class="delete-plan-btn" @click="handleDeletePlan">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20"
+                stroke="#FF3B30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
       </template>
     </AppHeader>
 
@@ -72,8 +80,8 @@
               </div>
 
               <!-- Action Button (e.g. Navigation) -->
-              <button v-if="isCurrentItem(element)" class="action-btn">
-                길찾기
+              <button v-if="isCurrentItem(element)" class="action-btn" @click.stop>
+                현재 진행중
               </button>
             </div>
 
@@ -83,27 +91,64 @@
     </div>
 
     <!-- ToDo Modal -->
-    <ToDoModal :isVisible="isModalOpen" :initialData="selectedTodo" :mode="modalMode" @close="closeModal"
-      @save="onSaveTodo" />
+    <ToDoModal :isVisible="isModalOpen" :initialData="selectedTodo" :mode="modalMode"
+      :readOnlyExceptDesc="isReadOnlyExceptDesc" @close="closeModal" @save="onSaveTodo" />
+
+    <!-- Plan Map Modal -->
+    <PlanMapModal :isVisible="isMapModalOpen" :todoList="todoList" @close="closeMapModal" />
+
+    <!-- Map View Button (Fixed Bottom) -->
+    <div class="map-btn-container" :class="{ 'with-save-btn': isDirty }">
+       <button class="map-view-btn" @click="openMapModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="map-icon">
+            <path d="M1 6V22L8 18L16 22L23 18V2L16 6L8 2L1 6Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 2V18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 6V22" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          지도로 보기
+       </button>
+    </div>
+
   </AppPage>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import draggable from 'vuedraggable';
-import ToDoModal from '@/components/my/ToDoModal.vue';
+import ToDoModal from '@/components/plan/ToDoModal.vue';
+import PlanMapModal from '@/components/plan/PlanMapModal.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
 import AppPage from '@/components/common/AppPage.vue';
 import { usePlanStore } from '@/stores/plan';
 
+const router = useRouter();
 const route = useRoute();
 const planStore = usePlanStore();
+
+const handleDeletePlan = async () => {
+  if (confirm('정말로 이 여행 계획을 삭제하시겠습니까? 삭제된 계획은 복구할 수 없습니다.')) {
+    const success = await planStore.deletePlan(route.params.id);
+    if (success) {
+      router.push({ name: 'plan' });
+    }
+  }
+};
 const planTitle = ref('여행 계획 상세'); // Future: Fetch plan title from store/api if available
 const scrollContainer = ref(null);
 const isModalOpen = ref(false);
+const isMapModalOpen = ref(false);
 const modalMode = ref('create'); // 'create' | 'edit'
 const selectedTodo = ref({});
+const isReadOnlyExceptDesc = ref(false);
+
+const openMapModal = () => {
+  isMapModalOpen.value = true;
+};
+
+const closeMapModal = () => {
+  isMapModalOpen.value = false;
+};
 
 let editingIndex = -1;
 const originalTodoList = ref([]); // Store initial state from server
@@ -231,6 +276,7 @@ const deleteTodo = (id, index) => {
 
 const openCreateModal = () => {
   modalMode.value = 'create';
+  isReadOnlyExceptDesc.value = false;
   selectedTodo.value = {
     // Default to start at selected date's 09:00 or current time
     startAt: selectedDate.value ? `${selectedDate.value}T09:00:00` : new Date().toISOString(),
@@ -242,6 +288,12 @@ const openCreateModal = () => {
 const openEditModal = (todo) => {
   modalMode.value = 'edit';
   selectedTodo.value = todo;
+  
+  // Check if past (End time < Now)
+  const end = new Date(todo.endAt);
+  const now = new Date();
+  isReadOnlyExceptDesc.value = end < now;
+
   editingIndex = todoList.value.findIndex(t => t.id === todo.id);
   isModalOpen.value = true;
 };
@@ -346,7 +398,9 @@ onMounted(async () => {
       startAt: item.willStartAt,
       endAt: item.willEndAt,
       durationMinutes: Math.floor((new Date(item.willEndAt) - new Date(item.willStartAt)) / 60000),
-      image: item.attractionImage
+      image: item.attractionImage,
+      latitude: item.latitude,
+      longitude: item.longitude
     }));
     originalTodoList.value = JSON.parse(JSON.stringify(todoList.value));
 
@@ -448,6 +502,16 @@ const scrollToCurrent = () => {
   /* Helper mostly replaced, but kept if used elsewhere? 
      AppHeader handles the back button. 
   */
+}
+
+.delete-plan-btn {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .timeline-content {
@@ -726,5 +790,42 @@ const scrollToCurrent = () => {
 .slide-up-leave-to {
   transform: translate(-50%, 100%);
   opacity: 0;
+}
+
+.map-btn-container {
+  position: fixed;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 90; /* Below UI Overlay (100) but above content */
+  pointer-events: none; /* Container passes clicks */
+  transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.map-btn-container.with-save-btn {
+  bottom: calc(90px + env(safe-area-inset-bottom)); /* Shift up above the save button */
+}
+
+.map-view-btn {
+  pointer-events: auto;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.map-view-btn:active {
+  transform: scale(0.95);
 }
 </style>

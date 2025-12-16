@@ -173,6 +173,7 @@ const isOpen = ref(false);
 const isSettingsOpen = ref(false);
 const isLoading = ref(false);
 const inputText = ref('');
+let loadingToastId = null;
 
 const settings = ref({
   m: 1000,
@@ -231,8 +232,20 @@ const handleSend = async () => {
 
     console.log("ChatModal: Sending Payload", payload);
 
+    // Show loading toast (Long duration, manual removal)
+    loadingToastId = toastStore.addToast('AI가 열심히 여행지를 찾고 있습니다... 🤖', 'info', 600000);
+
+    // Optional: Interval to update message if it takes very long (Simulating "Keep popping up")
+    // But a single persistent one is better UX. 
+    // If user REALLY meant "keep adding new toasts", we would use setInterval. 
+    // Let's stick to one persistent toast for now as it's cleaner, but if they want "alarms continuously", maybe blinking or updating text?
+    // I'll stick to a simple persistent toast first.
+
     const res = await aiApi.postAiRequest(payload);
     console.log("ChatModal: AI Response", res);
+
+    // Remove loading toast
+    if (loadingToastId) toastStore.removeToast(loadingToastId);
 
     // Check for empty results
     if (!res || (Array.isArray(res) && res.length === 0)) {
@@ -244,11 +257,13 @@ const handleSend = async () => {
     // Interceptor already returns the data payload, so we utilize res directly
     emits('ai-response', res);
   } catch (error) {
+    if (loadingToastId) toastStore.removeToast(loadingToastId);
     console.error("AI API Error:", error);
     toastStore.addToast('오류가 발생했습니다. 잠시 후 다시 시도해주세요.', 'error');
   } finally {
     isLoading.value = false;
     inputText.value = '';
+    loadingToastId = null;
   }
 };
 </script>

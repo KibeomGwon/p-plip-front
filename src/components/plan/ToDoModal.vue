@@ -5,17 +5,20 @@
       
       <div class="form-group">
         <label>제목</label>
-        <input v-model="formData.title" type="text" class="form-input" placeholder="일정을 입력하세요">
+        <input v-model="formData.title" type="text" class="form-input" placeholder="일정을 입력하세요"
+          :disabled="readOnlyExceptDesc" :class="{ 'disabled-input': readOnlyExceptDesc }">
       </div>
 
       <div class="form-group">
         <label>시작 시간</label>
-        <input v-model="formData.startAt" type="datetime-local" class="form-input">
+        <input v-model="formData.startAt" type="datetime-local" class="form-input" :disabled="readOnlyExceptDesc"
+          :class="{ 'disabled-input': readOnlyExceptDesc }">
       </div>
 
       <div class="form-group">
         <label>종료 시간</label>
-        <input v-model="formData.endAt" type="datetime-local" class="form-input">
+        <input v-model="formData.endAt" type="datetime-local" class="form-input" :disabled="readOnlyExceptDesc"
+          :class="{ 'disabled-input': readOnlyExceptDesc }">
       </div>
 
       <div class="form-group">
@@ -46,6 +49,10 @@ const props = defineProps({
   mode: {
     type: String, // 'create' or 'edit'
     default: 'create'
+  },
+  readOnlyExceptDesc: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -190,5 +197,11 @@ const handleSave = () => {
 .modal-btn.save {
   background: #0095f6;
   color: white;
+}
+
+.disabled-input {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
 }
 </style>

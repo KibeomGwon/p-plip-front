@@ -9,5 +9,6 @@ export const planApi = {
     }),
     getPlans: (params) => api.get("/trip/plan", { params }),
     getPlanDetails: (planId) => api.get(`/trip/plan/${planId}/todo`),
-    updatePlanDetails: (planId, todoList) => api.put(`/trip/plan/${planId}/todo`, todoList)
+    updatePlanDetails: (planId, todoList) => api.put(`/trip/plan/${planId}/todo`, todoList),
+    deletePlan: (planId) => api.delete(`/trip/plan/${planId}`)
 };

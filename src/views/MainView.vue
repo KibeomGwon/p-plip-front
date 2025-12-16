@@ -27,6 +27,15 @@
             </svg>
         </button>
 
+        <!-- My Location Button (Bottom Right, above ChatFab) -->
+        <button class="my-location-btn" @click="handleResetLocation" title="내 위치로">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" stroke="#3b82f6"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="12" r="3" fill="#3b82f6" />
+            </svg>
+        </button>
+
         <!-- Toggle Button (Visible when list is closed and has data) -->
         <button v-if="!isListOpen && places.length > 0" class="list-toggle-btn" @click="openSheet">
             목록 보기
@@ -126,6 +135,12 @@ const onClearMap = () => {
     }
     places.value = [];
     closeSheet();
+};
+
+const handleResetLocation = () => {
+    if (mapComp.value) {
+        mapComp.value.resetToCurrentLocation();
+    }
 };
 
 const updatePlaces = (newPlaces) => {
@@ -325,6 +340,29 @@ const stopDrag = () => {
 }
 
 .clear-map-btn:active {
+    transform: scale(0.95);
+    background-color: #f5f5f5;
+}
+
+.my-location-btn {
+    position: absolute;
+    bottom: calc(150px + env(safe-area-inset-bottom));
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 90;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.my-location-btn:active {
     transform: scale(0.95);
     background-color: #f5f5f5;
 }
