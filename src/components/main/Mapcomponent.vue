@@ -21,15 +21,7 @@
       </div>
     </Teleport>
 
-    <!-- My Location Button -->
-    <button class="my-location-btn" @click="resetToCurrentLocation" :disabled="isLocating">
-      <div v-if="isLocating" class="spinner"></div>
-      <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" stroke="white" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round" />
-        <circle cx="12" cy="12" r="3" fill="white" />
-      </svg>
-    </button>
+
   </div>
 </template>
 
@@ -245,23 +237,7 @@ const moveToLocation = (lat, lng, zoomLevel = null) => {
   }
 };
 
-defineExpose({
-  loadMore,
-  moveToLocation,
-  getMapCenter: () => {
-    if (mapRef.value) {
-      const center = mapRef.value.getCenter();
-      return { lat: center.getLat(), lng: center.getLng() };
-    }
-    return userLocation.value;
-  },
-  setMarkers: (list) => {
-    console.log("MapComponent: setMarkers called with", list.length, "items");
-    markerList.value = list;
-    // Emit update-places is optional if MainView handles it, but good for consistency
-    emit('update-places', [...markerList.value]);
-  }
-});
+
 
 const onClickMarker = async (marker) => {
   console.log('Marker clicked:', marker);
@@ -334,6 +310,26 @@ const resetToCurrentLocation = async () => {
 const closeModal = () => {
   selectedPlace.value = null;
 };
+
+defineExpose({
+  loadMore,
+  moveToLocation,
+  resetToCurrentLocation,
+  getMapCenter: () => {
+    if (mapRef.value) {
+      const center = mapRef.value.getCenter();
+      return { lat: center.getLat(), lng: center.getLng() };
+    }
+    return userLocation.value;
+  },
+  setMarkers: (list) => {
+    console.log("MapComponent: setMarkers called with", list.length, "items");
+    markerList.value = list;
+    // Emit update-places is optional if MainView handles it, but good for consistency
+    emit('update-places', [...markerList.value]);
+  },
+  fitBoundsToMarkers // Expose this function
+});
 
 onDeactivated(() => {
   closeModal();

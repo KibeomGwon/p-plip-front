@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { planApi } from '@/api/plan';
 import { useToastStore } from '@/stores/toast';
+import router from '@/router';
 
 export const usePlanStore = defineStore('plan', () => {
     const isGeneratingPlan = ref(false);
@@ -12,18 +13,40 @@ export const usePlanStore = defineStore('plan', () => {
 
     const suggestPlan = async (attractionId, query = "") => {
         isGeneratingPlan.value = true;
+        let loadingToastId = null;
+
         try {
+            // Persistent loading toast (10 minutes)
+            loadingToastId = toastStore.addToast('AI 계획 생성중... 🤖', 'info', 600000);
+
             const response = await planApi.suggestPlan(attractionId, query);
+            console.log("suggestPlan response:", response);
+
+            // Remove loading toast before showing result
+            if (loadingToastId) toastStore.removeToast(loadingToastId);
 
             if (response) {
                 toastStore.addToast('AI 계획 생성이 완료되었습니다!', 'success');
                 // Future: Reload plans or add the new plan to local state
+
+                // Navigate to the newly created plan
+                // Assuming response contains the created plan object with 'id'
+                // Or if response is the plan itself
+                const newPlanId = response.id || response.planId;
+
+                if (newPlanId) {
+                    if (confirm('여행 계획이 생성되었습니다. 상세 페이지로 이동하시겠습니까?')) {
+                        router.push({ name: 'todo-list', params: { id: newPlanId } });
+                    }
+                }
             } else {
                 // If response is null/undefined but no error throw, obscure case
                 toastStore.addToast('계획 생성 응답이 올바르지 않습니다.', 'warning');
             }
         } catch (error) {
             console.error('Plan suggestion error:', error);
+            // Remove loading toast in error case too if not reached above
+            if (loadingToastId) toastStore.removeToast(loadingToastId);
             toastStore.addToast('계획 생성 중 오류가 발생했습니다.', 'error');
         } finally {
             isGeneratingPlan.value = false;
@@ -93,6 +116,20 @@ export const usePlanStore = defineStore('plan', () => {
         }
     };
 
+    const deletePlan = async (planId) => {
+        try {
+            await planApi.deletePlan(planId);
+            toastStore.addToast('계획이 삭제되었습니다.', 'success');
+            // Remove from local plans if exists
+            plans.value = plans.value.filter(p => p.id !== planId);
+            return true;
+        } catch (error) {
+            console.error("Error deleting plan:", error);
+            toastStore.addToast('계획 삭제 중 오류가 발생했습니다.', 'error');
+            return false;
+        }
+    };
+
     const ongoingPlans = computed(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -119,6 +156,7 @@ export const usePlanStore = defineStore('plan', () => {
         fetchPlans,
         fetchPlanDetails,
         savePlanDetails,
+        deletePlan,
         ongoingPlans,
         pastPlans
     };

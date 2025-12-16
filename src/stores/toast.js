@@ -15,6 +15,8 @@ export const useToastStore = defineStore('toast', () => {
         setTimeout(() => {
             removeToast(id);
         }, duration);
+
+        return id;
     };
 
     const removeToast = (id) => {
