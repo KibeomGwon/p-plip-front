@@ -9,6 +9,7 @@ export const usePlanStore = defineStore('plan', () => {
     const plans = ref([]);
     const totalCount = ref(0); // For pagination if needed
     const isFetchingPlans = ref(false);
+
     const toastStore = useToastStore();
 
     const suggestPlan = async (attractionId, query = "", startDate, endDate) => {
@@ -99,14 +100,8 @@ export const usePlanStore = defineStore('plan', () => {
     const fetchPlanDetails = async (planId) => {
         try {
             const response = await planApi.getPlanDetails(planId);
-            // Handling wrapped response depending on axios interceptor
-            // The interceptor returns res.data if success is true. 
             // The API response user showed has structure: { message, data: [...], ... }
-            // So 'response' here should be the 'data' array if the interceptor unwraps it completely?
-            // Let's check api/index.js again.
-            // api/index.js: `if (res.success) { return res.data; }`
-            // API Response: `data: [ { ... } ]`
-            // So `response` will be `[ { ... } ]`.
+            // Interceptor usually handles it.
             return response || [];
         } catch (error) {
             console.error("Error fetching plan details:", error);

@@ -119,6 +119,11 @@ const router = createRouter({
       path: '/board/noticeboard/:id/modify',
       name: 'noticeboard-modify',
       component: () => import('@/views/board/NoticeBoardModifyView.vue')
+    },
+    {
+      path: '/my-plans/:id/map-search',
+      name: 'map-search',
+      component: () => import('@/views/attraction/AttractionMapSearchView.vue')
     }
   ],
 })
