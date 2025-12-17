@@ -92,7 +92,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { KakaoMap, KakaoMapCustomOverlay, KakaoMapMarker } from 'vue3-kakao-maps';
-import { attractionApi } from '@/api/attraction';
+import { attractionApi } from '@/axios/attraction';
 import { usePlanStore } from '@/stores/plan';
 import CategoryFilter from '@/components/main/CategoryFilter.vue';
 import PlaceDetailSheet from '@/components/attraction/PlaceDetailSheet.vue';

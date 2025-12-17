@@ -36,8 +36,8 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BoardDetailContent from '@/components/board/detail/BoardDetailContent.vue';
 import BoardDetailComment from '@/components/board/detail/BoardDetailComment.vue';
-import { boardApi } from '@/api/board';
-import { fileApi } from '@/api/file';
+import { boardApi } from '@/axios/board';
+import { fileApi } from '@/axios/file';
 import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();

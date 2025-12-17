@@ -158,7 +158,7 @@
 
 <script setup>
 import { ref, defineProps, defineEmits } from 'vue';
-import { aiApi } from '@/api/ai';
+import { aiApi } from '@/axios/ai';
 import { useToastStore } from '@/stores/toast';
 
 const props = defineProps({
@@ -328,6 +328,9 @@ const handleSend = async () => {
   cursor: pointer;
   flex-shrink: 0;
   transition: transform 0.2s, background 0.2s;
+  margin: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .action-btn:active {
@@ -357,6 +360,7 @@ const handleSend = async () => {
   color: #333;
   padding: 0 8px;
   background: transparent;
+  min-width: 0;
 }
 
 /* Settings Popover */

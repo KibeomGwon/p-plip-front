@@ -63,7 +63,7 @@
 <script setup>
 import { ref, computed, watch, defineProps, defineEmits, onMounted, onUnmounted } from 'vue';
 import ImageCropper from '@/components/common/ImageCropper.vue';
-import { fileApi } from '@/api/file';
+import { fileApi } from '@/axios/file';
 import { useImage } from '@/composables/useImage';
 
 const props = defineProps({

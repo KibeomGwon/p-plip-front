@@ -95,7 +95,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { userApi } from '@/api/user';
+import { userApi } from '@/axios/user';
 
 const router = useRouter();
 const email = ref('');

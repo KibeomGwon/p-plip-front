@@ -87,7 +87,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import NavBar from '@/components/common/Navbar.vue';
-import { attractionApi } from '@/api/attraction';
+import { attractionApi } from '@/axios/attraction';
 import { usePlanStore } from '@/stores/plan';
 
 const planStore = usePlanStore();

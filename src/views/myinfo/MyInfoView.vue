@@ -122,7 +122,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { userApi } from '@/api/user'; // Import userApi
+import { userApi } from '@/axios/user'; // Import userApi
 
 import NavBar from '@/components/common/Navbar.vue';
 import ChatModal from '@/components/common/ChatModal.vue';

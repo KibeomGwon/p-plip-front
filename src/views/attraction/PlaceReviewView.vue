@@ -46,7 +46,7 @@ import SortFilter from '@/components/common/SortFilter.vue';
 import PlaceReviewItem from '@/components/attraction/review/PlaceReviewItem.vue';
 import PlaceReviewInput from '@/components/attraction/review/PlaceReviewInput.vue';
 import PlaceReviewModifyModal from '@/components/attraction/review/PlaceReviewModifyModal.vue';
-import { reviewApi } from '@/api/review';
+import { reviewApi } from '@/axios/review';
 import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();

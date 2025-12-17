@@ -59,7 +59,7 @@ import { ref, computed, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import ImageCropper from '@/components/common/ImageCropper.vue';
-import { fileApi } from '@/api/file';
+import { fileApi } from '@/axios/file';
 
 const emit = defineEmits(['submit']);
 const router = useRouter();

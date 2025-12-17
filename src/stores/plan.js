@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { planApi } from '@/api/plan';
+import { planApi } from '@/axios/plan';
 import { useToastStore } from '@/stores/toast';
 import router from '@/router';
 
@@ -146,7 +146,7 @@ export const usePlanStore = defineStore('plan', () => {
         today.setHours(0, 0, 0, 0);
         return plans.value.filter(plan => {
             const end = new Date(plan.endDate);
-            return end >= today;
+            return end >= today && plan.completedRate < 100;
         });
     });
 
@@ -155,7 +155,7 @@ export const usePlanStore = defineStore('plan', () => {
         today.setHours(0, 0, 0, 0);
         return plans.value.filter(plan => {
             const end = new Date(plan.endDate);
-            return end < today;
+            return end < today || plan.completedRate >= 100;
         });
     });
 

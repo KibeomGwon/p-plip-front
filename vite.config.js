@@ -38,9 +38,23 @@ export default defineConfig({
         }),
         vueDevTools()
     ],
-    server: {
-        // 모든 외부 호스트 접속 허용
-        allowedHosts: true
+    server: {// 1. 외부 접속 허용
+        host: '0.0.0.0',
+        // 2. 포트 고정 (필요시)
+        port: 5173,
+
+        // 3. HMR(새로고침) 설정 (이게 핵심!)
+        hmr: {
+            clientPort: 443, // 클라이언트는 https(443)로 접속한다고 알려줌
+            host: 'm.pplip.c01.kr', // 내 도메인 주소
+            protocol: 'wss' // 보안 웹소켓 사용
+        },
+
+        // 4. 허용된 호스트 목록 추가 (보안 에러 방지)
+        allowedHosts: [
+            'm.pplip.c01.kr',
+            'pplip.c01.kr'
+        ]
     },
     resolve: {
         alias: {

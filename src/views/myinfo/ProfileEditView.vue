@@ -55,8 +55,8 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import AppHeader from '@/components/common/AppHeader.vue';
 import AppPage from '@/components/common/AppPage.vue';
-import { userApi } from '@/api/user';
-import { fileApi, IMAGE_TYPE } from '@/api/file';
+import { userApi } from '@/axios/user';
+import { fileApi, IMAGE_TYPE } from '@/axios/file';
 
 const router = useRouter();
 const fileInput = ref(null);
