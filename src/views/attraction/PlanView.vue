@@ -88,7 +88,7 @@ const processedOngoingTrips = computed(() => {
   return planStore.ongoingPlans.map(plan => ({
     ...plan,
     image: plan.thumbnail, // Map API 'thumbnail' to UI 'image'
-    progress: calculateProgress(plan.startDate, plan.endDate)
+    progress: plan.completedRate.toFixed(1) //calculateProgress(plan.startDate, plan.endDate)
   }));
 });
 

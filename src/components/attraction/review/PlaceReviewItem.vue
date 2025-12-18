@@ -42,8 +42,8 @@ import { computed, ref } from 'vue'; // Added ref
 import ImageCarousel from '@/components/common/ImageCarousel.vue';
 import { useImages, useImage } from '@/composables/useImage';
 import { useRelativeTime } from '@/composables/useRelativeTime';
-import { reviewApi } from '@/api/review';
-import { fileApi } from '@/api/file';
+import { reviewApi } from '@/axios/review';
+import { fileApi } from '@/axios/file';
 import { useDefaultImage } from '@/composables/useDefaultImage';
 
 const { getImagesUrl } = useImages();

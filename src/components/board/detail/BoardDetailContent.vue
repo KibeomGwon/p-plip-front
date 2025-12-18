@@ -78,7 +78,7 @@ import { useRelativeTime } from '@/composables/useRelativeTime';
 import defaultAvatar from '@/assets/default_avatar.png';
 import { useImage, useImages } from '@/composables/useImage';
 import { useAuthStore } from '@/stores/auth';
-import { boardApi } from '@/api/board';
+import { boardApi } from '@/axios/board';
 import { useRouter } from 'vue-router';
 
 const { formatTime } = useRelativeTime();

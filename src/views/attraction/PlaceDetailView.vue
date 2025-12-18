@@ -27,7 +27,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import PlaceDetailContent from '@/components/attraction/PlaceDetailContent.vue';
-import { attractionApi } from '@/api/attraction';
+import { attractionApi } from '@/axios/attraction';
 
 const route = useRoute();
 const place = ref(null);

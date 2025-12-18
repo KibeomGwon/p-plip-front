@@ -77,8 +77,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 import ImageCropper from '@/components/common/ImageCropper.vue';
-import { boardApi } from '@/api/board';
-import { fileApi, IMAGE_TYPE } from '@/api/file';
+import { boardApi } from '@/axios/board';
+import { fileApi, IMAGE_TYPE } from '@/axios/file';
 
 import { useAuthStore } from '@/stores/auth';
 

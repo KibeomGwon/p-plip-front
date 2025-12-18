@@ -29,7 +29,7 @@
 import { ref, computed, onDeactivated, watch, onMounted } from 'vue';
 import { KakaoMap, KakaoMapMarker } from 'vue3-kakao-maps';
 import PlaceDetailSheet from '@/components/attraction/PlaceDetailSheet.vue';
-import { attractionApi } from '@/api/attraction';
+import { attractionApi } from '@/axios/attraction';
 import { useLocationStore } from '@/stores/location';
 import { storeToRefs } from 'pinia';
 

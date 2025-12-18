@@ -73,7 +73,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { attractionApi } from '@/api/attraction';
+import { attractionApi } from '@/axios/attraction';
 import { useAuthStore } from '@/stores/auth';
 
 const emit = defineEmits(['search']);

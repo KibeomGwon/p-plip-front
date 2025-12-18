@@ -77,8 +77,8 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'; // Fixed imports
 import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 import ImageCropper from '@/components/common/ImageCropper.vue';
-import { boardApi } from '@/api/board';
-import { fileApi } from '@/api/file';
+import { boardApi } from '@/axios/board';
+import { fileApi } from '@/axios/file';
 import { useImage } from '@/composables/useImage';
 
 const { getImageUrl } = useImage();

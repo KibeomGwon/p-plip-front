@@ -80,7 +80,7 @@ import { ref, watch, onMounted } from 'vue';
 import SortFilter from '@/components/common/SortFilter.vue';
 import PlaceReviewItem from '@/components/attraction/review/PlaceReviewItem.vue';
 import PlaceReviewModifyModal from '@/components/attraction/review/PlaceReviewModifyModal.vue';
-import { reviewApi } from '@/api/review';
+import { reviewApi } from '@/axios/review';
 import { useAuthStore } from '@/stores/auth';
 import { useRelativeTime } from '@/composables/useRelativeTime';
 import { useImage } from '@/composables/useImage';

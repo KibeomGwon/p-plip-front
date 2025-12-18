@@ -31,7 +31,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { boardApi } from '@/api/board';
+import { boardApi } from '@/axios/board';
 import SortFilter from '@/components/common/SortFilter.vue';
 
 const props = defineProps({

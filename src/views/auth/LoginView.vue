@@ -29,7 +29,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { userApi } from '@/api/user';
+import { userApi } from '@/axios/user';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
