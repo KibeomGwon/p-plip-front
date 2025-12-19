@@ -92,14 +92,16 @@ import { attractionApi } from '@/axios/attraction';
 import { usePlanStore } from '@/stores/plan';
 import { useAuthStore } from '@/stores/auth'; // Added
 
-const planStore = usePlanStore();
-const authStore = useAuthStore(); // Added
-const router = useRouter(); // Added
+import { useRegionStore } from '@/stores/region';
+import { storeToRefs } from 'pinia';
 
-// Data placeholders
-const regionData = ref({});
-const sidoCodeMap = ref({});
-const gugunCodeMap = ref({});
+const planStore = usePlanStore();
+const authStore = useAuthStore();
+const regionStore = useRegionStore();
+const router = useRouter();
+
+// Use data from store
+const { regionData, sidoCodeMap, gugunCodeMap } = storeToRefs(regionStore);
 
 // Codes for regions that stop at Step 1 (Major Cities/Special Provinces)
 const singleStepRegionCodes = [1, 2, 3, 4, 5, 6, 7, 8, 39];
@@ -128,64 +130,6 @@ const targetIndex = ref(0);
 
 const selectedSidoCode = ref(null);
 const selectedGugunCode = ref(null);
-
-const fetchRegions = async () => {
-  try {
-    const res = await attractionApi.getRegions();
-    console.log(res);
-    // 2-char Name Mapping
-    const sidoMap = {
-      '세종특별자치시': '세종',
-      '제주특별자치도': '제주',
-      '강원특별자치도': '강원',
-      '전북특별자치도': '전북',
-      '경기도': '경기',
-      '충청북도': '충북',
-      '충청남도': '충남',
-      '경상북도': '경북',
-      '경상남도': '경남',
-      '전라북도': '전북',
-      '전라남도': '전남',
-      '제주도': '제주'
-    };
-
-    const newRegionData = {};
-    const newSidoCodeMap = {};
-    const newGugunCodeMap = {};
-
-    if (Array.isArray(res)) {
-      res.forEach(item => {
-        let sName = item.sido.sidoName;
-        if (sidoMap[sName]) {
-          sName = sidoMap[sName];
-        } else {
-          sName = sName.substring(0, 2);
-        }
-
-        const sCode = item.sido.sidoCode;
-        newSidoCodeMap[sName] = sCode;
-
-        // Map Gugun names to 2 chars and store codes
-        newRegionData[sName] = [];
-        newGugunCodeMap[sName] = {};
-
-        if (item.guguns) {
-          item.guguns.forEach(g => {
-            const gName = g.gugunName.substring(0, 2);
-            newRegionData[sName].push(gName);
-            newGugunCodeMap[sName][gName] = g.gugunCode;
-          });
-        }
-      });
-    }
-
-    regionData.value = newRegionData;
-    sidoCodeMap.value = newSidoCodeMap;
-    gugunCodeMap.value = newGugunCodeMap;
-  } catch (error) {
-    console.error('Error fetching regions:', error);
-  }
-};
 
 // Computed
 const provinces = computed(() => Object.keys(regionData.value));
@@ -219,9 +163,13 @@ const finalLocationString = computed(() => {
   return selectedProvince.value;
 });
 
-onMounted(() => {
-  fetchRegions();
+watch(regionData, (newVal) => {
+  console.log("RouletteView: regionData updated in store:", newVal);
+}, { deep: true });
 
+onMounted(() => {
+  console.log("RouletteView Mounted. Current regionData:", regionData.value);
+  regionStore.fetchRegions();
   // Init default dates
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -235,10 +183,10 @@ onMounted(() => {
 const handleSpinClick = () => {
   // Auth Check Added
   if (!authStore.isLoggedIn) {
-     if (confirm('로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?')) {
-       router.push({ name: 'login' });
-     }
-     return;
+    if (confirm('로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?')) {
+      router.push({ name: 'login' });
+    }
+    return;
   }
 
   if (isSpinning.value) return;
@@ -271,11 +219,11 @@ const startRoulette = () => {
 
   targetIndex.value = targetIdx;
 
-  const itemWidth = 100; 
+  const itemWidth = 100;
   const itemGap = 10;
   const unit = itemWidth + itemGap;
   const targetPos = (targetIdx * unit);
-  
+
   const landingPosition = targetPos + (itemWidth / 2);
 
   // Animation loop
@@ -340,9 +288,9 @@ const determineResult = (result) => {
 const openAiChat = () => {
   // Auth Check Added
   if (!authStore.isLoggedIn) {
-     alert('로그인이 필요한 서비스입니다.');
-     router.push({ name: 'login' });
-     return;
+    alert('로그인이 필요한 서비스입니다.');
+    router.push({ name: 'login' });
+    return;
   }
 
   if (!startDate.value || !endDate.value) {

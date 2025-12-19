@@ -57,7 +57,7 @@
 
           <div class="action-area">
             <button class="start-btn" @click="startApp">여행 시작하기</button>
-            <div class="login-link" @click="startApp">로그인</div>
+            <div class="login-link" @click="goToLogin">로그인</div>
           </div>
         </div>
       </div>
@@ -112,6 +112,11 @@ const prevSlide = () => {
 const startApp = () => {
   localStorage.setItem('welcome-seen', 'true');
   router.push({ name: 'main' });
+};
+
+const goToLogin = () => {
+  localStorage.setItem('welcome-seen', 'true');
+  router.push({ name: 'login' });
 };
 
 const neverShowAgain = () => {
