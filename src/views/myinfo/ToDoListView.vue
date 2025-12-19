@@ -46,7 +46,7 @@
       <div v-if="filteredTodoList.length > 0" class="timeline-line"></div>
 
       <draggable v-model="filteredTodoList" item-key="id" handle=".drag-handle" @end="onDragEnd"
-        class="todo-draggable-list" :animation="200">
+        class="todo-draggable-list" :animation="200" :delay="200" :delay-on-touch-only="true">
         <template #item="{ element, index }">
           <div class="todo-item" :class="[getCardStatusClass(element), { 'is-active': isCurrentItem(element) }]"
             :id="'todo-' + element.id" @click="openEditModal(element)">

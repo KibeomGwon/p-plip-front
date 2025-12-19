@@ -4,6 +4,14 @@
             <li class="nav-item">
                 <router-link :to="{ name: 'plan' }" class="nav-link">
                     <div class="icon-container" :class="{ 'twinkle': planStore.isGeneratingPlan }">
+                        <!-- Arrow Indicator -->
+                        <div v-if="planStore.isGeneratingPlan" class="indicator-arrow">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2V16M12 16L6 10M12 16L18 10" stroke="#0095f6" stroke-width="4"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path
                                 d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5"
@@ -123,10 +131,31 @@ const planStore = usePlanStore();
     border-radius: 50%;
     /* For animation glow */
     padding: 4px;
+    position: relative;
+    /* For absolute positioning of arrow */
 }
 
-/* Twinkle Animation for Generating Plan */
-/* Moved to global App.vue for reusability */
+.indicator-arrow {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: bounce 1s infinite;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    z-index: 10;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translate(-50%, 0);
+    }
+
+    50% {
+        transform: translate(-50%, -6px);
+    }
+}
 
 .nav-label {
     font-size: 11px;

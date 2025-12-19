@@ -86,11 +86,15 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router'; // Added
 import NavBar from '@/components/common/Navbar.vue';
 import { attractionApi } from '@/axios/attraction';
 import { usePlanStore } from '@/stores/plan';
+import { useAuthStore } from '@/stores/auth'; // Added
 
 const planStore = usePlanStore();
+const authStore = useAuthStore(); // Added
+const router = useRouter(); // Added
 
 // Data placeholders
 const regionData = ref({});
@@ -229,6 +233,14 @@ onMounted(() => {
 });
 
 const handleSpinClick = () => {
+  // Auth Check Added
+  if (!authStore.isLoggedIn) {
+     if (confirm('로그인이 필요한 서비스입니다.\n로그인 페이지로 이동하시겠습니까?')) {
+       router.push({ name: 'login' });
+     }
+     return;
+  }
+
   if (isSpinning.value) return;
   startRoulette();
 };
@@ -252,8 +264,6 @@ const startRoulette = () => {
   }
 
   // Calculate target
-  // We want to stop at a random item somewhere in the middle-end of the strip
-  // to ensure we have enough "road" to scroll.
   const totalItems = rouletteItems.value.length;
   const minIndex = Math.floor(totalItems * 0.6);
   const maxIndex = Math.floor(totalItems * 0.8);
@@ -261,34 +271,16 @@ const startRoulette = () => {
 
   targetIndex.value = targetIdx;
 
-  // Window width is roughly 300px or 100% of container (setup in CSS)
-  // We want the target item to be centered.
-  // Item width = 100, Gap = 10. Total unit = 110.
-  // Center of item = offset + ItemWidth/2
-  // We want Center of item to be at Center of Window
-  // Let's assume window is fixed width for calculation, or we measure it.
-  // For simplicity, let's assume a 300px visible window.
-  // Center is 150px.
-  // Target position: (Index * Unit) + (Unit / 2).
-  // Scroll Offset needed: TargetPosition - WindowCenter.
-
+  const itemWidth = 100; 
+  const itemGap = 10;
   const unit = itemWidth + itemGap;
-  const windowWidth = 300; // Fixed in CSS
   const targetPos = (targetIdx * unit);
-  // Adjust so item is centered:
-  // With padding-left: 50% (150px), the strip starts at the center.
-  // We want the item's CENTER to align with the window's CENTER (150px).
-  // Item's Center in natural layout = 150 (padding) + targetPos + (itemWidth/2).
-  // We need to shift by 'offset' so that visual position is 150.
-  // 150 = (150 + targetPos + 50) - offset
-  // offset = targetPos + 50
-
+  
   const landingPosition = targetPos + (itemWidth / 2);
 
   // Animation loop
   const duration = 3000;
   const startOffset = 0;
-  // Make it start smoothly
 
   const startTime = performance.now();
 
@@ -346,6 +338,13 @@ const determineResult = (result) => {
 };
 
 const openAiChat = () => {
+  // Auth Check Added
+  if (!authStore.isLoggedIn) {
+     alert('로그인이 필요한 서비스입니다.');
+     router.push({ name: 'login' });
+     return;
+  }
+
   if (!startDate.value || !endDate.value) {
     alert('여행 기간을 선택해주세요.');
     return;

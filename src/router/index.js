@@ -20,7 +20,8 @@ const router = createRouter({
     {
       path: '/plan',
       name: 'plan',
-      component: PlanView
+      component: PlanView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/roulette',
@@ -127,5 +128,23 @@ const router = createRouter({
     }
   ],
 })
+
+// Navigation Guard
+import { useAuthStore } from '@/stores/auth';
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore();
+
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!authStore.isLoggedIn) {
+      alert('로그인이 필요한 서비스입니다.');
+      next({ name: 'login' });
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
+});
 
 export default router

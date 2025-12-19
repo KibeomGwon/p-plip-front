@@ -7,7 +7,7 @@ const api = axios.create({
         "Content-Type": "application/json",
     },
     withCredentials: true,
-    timeout: 5000,
+    timeout: 10000,
 });
 
 api.interceptors.request.use(

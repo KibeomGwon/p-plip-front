@@ -106,6 +106,16 @@ const onLoadKakaoMap = (map) => {
       const center = map.getCenter();
       sortMarkers(center.getLat(), center.getLng());
     });
+
+    // Add click listener to map to update user location
+    window.kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
+      const latlng = mouseEvent.latLng;
+      const lat = latlng.getLat();
+      const lng = latlng.getLng();
+
+      console.log(`Map clicked at: ${lat}, ${lng}`);
+      locationStore.updateLocation(lat, lng);
+    });
   }
 }
 

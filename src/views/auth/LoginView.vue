@@ -51,7 +51,8 @@ const handleLogin = async () => {
     authStore.login( res.accessToken );
     
     if (route.query.redirect) {
-      router.push(route.query.redirect);
+      // router.push(route.query.redirect);
+      router.back();
     } else {
       router.push({ name: 'main' });
     }
