@@ -112,8 +112,7 @@ const onWheel = (e) => {
   /* Fill remaining space below header */
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  /* Allow scrolling if content overflows */
+  /* overflow-y: auto; REMOVED for unified scrolling */
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
   padding-top: 20px;
   /* Add space between header and content */

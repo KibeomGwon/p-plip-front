@@ -26,15 +26,23 @@
 
         <!-- Search Result Markers -->
         <!-- Search Result Markers -->
-        <KakaoMapMarker
+        <!-- Search Result Markers -->
+        <KakaoMapCustomOverlay
           v-for="(place, index) in results" 
           :key="getPlaceId(place) || index"
           :lat="Number(place.latitude)"
           :lng="Number(place.longitude)"
-          :clickable="true"
-          :title="place.title"
-          @onClickKakaoMapMarker="selectPlace(place)"
-        />
+          :yAnchor="1"
+          :zIndex="10"
+        >
+            <div class="custom-marker-wrapper" @click.stop="selectPlace(place)">
+                <img class="custom-marker-image" :class="{ 
+                    'shopping-marker': Number(place.contentTypeId) === 38 || Number(place.contentType) === 38,
+                    'festival-marker': Number(place.contentTypeId) === 15 || Number(place.contentType) === 15,
+                    'food-marker': Number(place.contentTypeId) === 39 || Number(place.contentType) === 39
+                }" :src="getCategoryMarker(place.contentTypeId || place.contentType)" alt="marker" />
+            </div>
+        </KakaoMapCustomOverlay>
 
 
       </KakaoMap>
@@ -97,12 +105,37 @@ import { usePlanStore } from '@/stores/plan';
 import CategoryFilter from '@/components/main/CategoryFilter.vue';
 import PlaceDetailSheet from '@/components/attraction/PlaceDetailSheet.vue';
 
+import markerAttraction from '@/assets/markers/marker_attraction.png'
+import markerCulture from '@/assets/markers/marker_culture.png'
+import markerFood from '@/assets/markers/marker_food.png'
+import markerAccommodation from '@/assets/markers/marker_accommodation.png'
+import markerShopping from '@/assets/markers/marker_shopping.png'
+import markerLeports from '@/assets/markers/marker_leports.png'
+import markerFestival from '@/assets/markers/marker_festival.png'
+import markerCourse from '@/assets/markers/marker_course.png'
+
 const props = defineProps({
     existingItems: {
-        type: Array,
-        default: () => []
-    }
+    type: Array,
+    default: () => []
+  }
 });
+
+const getCategoryMarker = (typeId) => {
+  const id = Number(typeId);
+  switch (id) {
+    case 12: return markerAttraction; // Attraction
+    case 14: return markerCulture; // Culture
+    case 15: return markerFestival; // Festival
+    case 25: return markerCourse; // Course
+    case 28: return markerLeports; // Leports
+    case 32: return markerAccommodation; // Accommodation
+    case 38: return markerShopping; // Shopping
+    case 39: return markerFood; // Food
+    default: return markerAttraction; // Default
+  }
+};
+
 
 const emit = defineEmits(['close', 'add-item']);
 
@@ -797,8 +830,8 @@ const toLocalISOString = (date) => {
 /* Ensure PlaceInfoCard looks good in modal */
 .place-card-wrapper :deep(.content-card) {
     margin: 0;
-    max-height: 70vh;
-    overflow-y: auto;
+    /* max-height: 70vh; REMOVED to allow unified scrolling */
+    /* overflow-y: auto; REMOVED */
 }
 
 @keyframes fadeIn {
@@ -858,5 +891,49 @@ const toLocalISOString = (date) => {
     border-radius: 50%;
     animation: spin 1s linear infinite;
     display: inline-block;
+}
+</style>
+
+<style>
+/* Global styles for Map Custom Overlay Markers */
+.custom-marker-wrapper {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s;
+  pointer-events: auto;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.custom-marker-wrapper:hover {
+  transform: scale(1.1) translateY(-4px);
+  z-index: 100;
+}
+.custom-marker-image {
+  width: 34px;
+  height: auto;
+  max-height: 34px;
+  object-fit: contain;
+  display: block;
+  background-color: transparent;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.custom-marker-image.shopping-marker,
+.custom-marker-image.festival-marker {
+  width: 50px;
+  max-height: 50px;
+  z-index: 101;
+}
+
+.custom-marker-image.food-marker {
+  width: 42px;
+  max-height: 42px;
+  z-index: 101;
 }
 </style>
