@@ -77,7 +77,12 @@ defineEmits(['close']);
   /* Allow internal scrolling */
   display: flex;
   flex-direction: column;
-  padding-bottom: 20px;
+  scrollbar-width: none;
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal-body::-webkit-scrollbar {
+  display: none;
 }
 
 @keyframes scaleUp {

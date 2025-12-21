@@ -9,9 +9,16 @@
         imageHeight: 69
       }" @onLoadKakaoMapMarker="onLoadUserMarker" />
 
-      <KakaoMapMarker v-for="marker in markerList" :key="marker.no" :lat="marker.latitude" :lng="marker.longitude"
-        :clickable="true" :title="marker.title" @onLoadKakaoMapMarker="onLoadMarker($event, marker)"
-        @onClickKakaoMapMarker="onClickMarker(marker)" />
+      <KakaoMapCustomOverlay v-for="marker in markerList" :key="marker.no" :lat="marker.latitude" :lng="marker.longitude"
+        :yAnchor="1" :zIndex="10">
+        <div class="custom-marker-wrapper" @click.stop="onClickMarker(marker)">
+          <img class="custom-marker-image" :class="{ 
+            'shopping-marker': Number(marker.contentType) === 38,
+            'festival-marker': Number(marker.contentType) === 15,
+            'food-marker': Number(marker.contentType) === 39
+          }" :src="getCategoryMarker(marker.contentType)" alt="marker" />
+        </div>
+      </KakaoMapCustomOverlay>
     </KakaoMap>
 
     <!-- Place Detail Modal (Bottom Sheet) -->
@@ -27,7 +34,7 @@
 
 <script setup>
 import { ref, computed, onDeactivated, watch, onMounted } from 'vue';
-import { KakaoMap, KakaoMapMarker } from 'vue3-kakao-maps';
+import { KakaoMap, KakaoMapMarker, KakaoMapCustomOverlay } from 'vue3-kakao-maps';
 import PlaceDetailSheet from '@/components/attraction/PlaceDetailSheet.vue';
 import { attractionApi } from '@/axios/attraction';
 import { useLocationStore } from '@/stores/location';
@@ -63,6 +70,15 @@ const isLoading = ref(false);
 const isLocating = ref(false); // For My Location button spinner
 const isLastPage = ref(false);
 
+import markerAttraction from '@/assets/markers/marker_attraction.png'
+import markerCulture from '@/assets/markers/marker_culture.png'
+import markerFood from '@/assets/markers/marker_food.png'
+import markerAccommodation from '@/assets/markers/marker_accommodation.png'
+import markerShopping from '@/assets/markers/marker_shopping.png'
+import markerLeports from '@/assets/markers/marker_leports.png'
+import markerFestival from '@/assets/markers/marker_festival.png'
+import markerCourse from '@/assets/markers/marker_course.png'
+
 const locationStore = useLocationStore();
 const { location: userLocation, isInitialized } = storeToRefs(locationStore);
 
@@ -71,6 +87,21 @@ watch(() => [props.contentType, props.searchQuery, props.searchRadius], () => {
   console.log("MapComponent: Filters changed");
   fetchAttractions(true, true); // Reset and Center
 }, { deep: true });
+
+const getCategoryMarker = (typeId) => {
+  const id = Number(typeId);
+  switch (id) {
+    case 12: return markerAttraction; // Attraction
+    case 14: return markerCulture; // Culture
+    case 15: return markerFestival; // Festival
+    case 25: return markerCourse; // Course
+    case 28: return markerLeports; // Leports
+    case 32: return markerAccommodation; // Accommodation
+    case 38: return markerShopping; // Shopping
+    case 39: return markerFood; // Food
+    default: return markerAttraction; // Default
+  }
+};
 
 const onLoadKakaoMap = (map) => {
   console.log("on load and call api");
@@ -428,3 +459,49 @@ onDeactivated(() => {
   }
 }
 </style>
+
+<style>
+/* Global styles for Map Custom Overlay Markers */
+.custom-marker-wrapper {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s;
+  pointer-events: auto;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.custom-marker-wrapper:hover {
+  transform: scale(1.1) translateY(-4px);
+  z-index: 100;
+}
+.custom-marker-image {
+  width: 34px;
+  height: auto;
+  max-height: 34px;
+  object-fit: contain;
+  display: block;
+  background-color: transparent;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.custom-marker-image.shopping-marker,
+.custom-marker-image.festival-marker {
+  width: 50px;
+  max-height: 50px;
+  z-index: 101;
+}
+
+.custom-marker-image.food-marker {
+  width: 42px;
+  max-height: 42px;
+  z-index: 101;
+}
+
+</style>
+```
