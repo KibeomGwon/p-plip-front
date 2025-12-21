@@ -4,7 +4,14 @@
       <span class="d-day-badge">{{ calculateDDay(trip.startDate) }}</span>
       <div class="card-overlay">
         <h3 class="trip-title">{{ trip.title }}</h3>
-        <p class="trip-date">{{ trip.startDate }} - {{ trip.endDate }}</p>
+        <p class="trip-date">
+          <template v-if="trip.startDate && trip.endDate">
+            {{ trip.startDate }} - {{ trip.endDate }}
+          </template>
+          <template v-else>
+            미정
+          </template>
+        </p>
       </div>
     </div>
     <div class="card-footer">
@@ -35,16 +42,20 @@ const navigateToTodo = () => {
 };
 
 const calculateDDay = (startDate) => {
+  if (!startDate) return ''; // Return empty if null
+
   const today = new Date();
   // Reset time to midnight for accurate day calculation
   today.setHours(0, 0, 0, 0);
-  
+
   const targetDate = new Date(startDate);
+  if (isNaN(targetDate.getTime())) return ''; // Check invalid date
+
   targetDate.setHours(0, 0, 0, 0);
-  
+
   const diffTime = targetDate - today;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) return 'D-Day';
   if (diffDays < 0) return `D+${Math.abs(diffDays)}`;
   return `D-${diffDays}`;
@@ -53,12 +64,15 @@ const calculateDDay = (startDate) => {
 
 <style scoped>
 .going-card {
-  min-width: 240px; /* 300px * 0.8 */
-  width: 72%; /* 90% * 0.8 */
+  min-width: 240px;
+  /* 300px * 0.8 */
+  width: 72%;
+  /* 90% * 0.8 */
   background: white;
-  border-radius: 16px; /* Scaled down radius */
+  border-radius: 16px;
+  /* Scaled down radius */
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.2s;
@@ -70,21 +84,27 @@ const calculateDDay = (startDate) => {
 
 .card-image-wrapper {
   position: relative;
-  height: 160px; /* 200px * 0.8 */
+  height: 160px;
+  /* 200px * 0.8 */
   background-size: cover;
   background-position: center;
 }
 
 .d-day-badge {
   position: absolute;
-  top: 12px; /* Scaled down */
-  left: 12px; /* Scaled down */
+  top: 12px;
+  /* Scaled down */
+  left: 12px;
+  /* Scaled down */
   background-color: #007bff;
   color: white;
-  padding: 3px 10px; /* Scaled down */
-  border-radius: 6px; /* Scaled down */
+  padding: 3px 10px;
+  /* Scaled down */
+  border-radius: 6px;
+  /* Scaled down */
   font-weight: 700;
-  font-size: 11px; /* Scaled down */
+  font-size: 11px;
+  /* Scaled down */
 }
 
 .card-overlay {
@@ -92,33 +112,39 @@ const calculateDDay = (startDate) => {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 16px; /* Scaled down */
-  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+  padding: 16px;
+  /* Scaled down */
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 100%);
   color: white;
 }
 
 .trip-title {
-  font-size: 18px; /* ~22px * 0.8 */
+  font-size: 18px;
+  /* ~22px * 0.8 */
   font-weight: 700;
   margin: 0 0 4px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .trip-date {
-  font-size: 11px; /* ~14px * 0.8 */
+  font-size: 11px;
+  /* ~14px * 0.8 */
   margin: 0;
   opacity: 0.9;
 }
 
 .card-footer {
-  padding: 12px; /* Scaled down */
+  padding: 12px;
+  /* Scaled down */
 }
 
 .progress-bar-container {
-  height: 5px; /* Scaled down */
+  height: 5px;
+  /* Scaled down */
   background-color: #eee;
   border-radius: 2.5px;
-  margin-bottom: 10px; /* Scaled down */
+  margin-bottom: 10px;
+  /* Scaled down */
   overflow: hidden;
 }
 
@@ -132,7 +158,8 @@ const calculateDDay = (startDate) => {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  font-size: 11px; /* Scaled down */
+  font-size: 11px;
+  /* Scaled down */
   color: #666;
 }
 </style>

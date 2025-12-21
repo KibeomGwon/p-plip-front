@@ -21,5 +21,6 @@ export const planApi = {
     getPlans: (params) => api.get("/trip/plan", { params }),
     getPlanDetails: (planId) => api.get(`/trip/plan/${planId}/todo`),
     updatePlanDetails: (planId, todoList) => api.put(`/trip/plan/${planId}/todo`, todoList),
-    deletePlan: (planId) => api.delete(`/trip/plan/${planId}`)
+    deletePlan: (planId) => api.delete(`/trip/plan/${planId}`),
+    createPlan: (title) => api.post(`/trip/plan`, { title })
 };

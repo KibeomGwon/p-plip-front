@@ -11,6 +11,7 @@
 
 <script setup>
 import Toast from '@/components/common/Toast.vue';
+import { useRegionStore } from '@/stores/region';
 </script>
 
 <style>

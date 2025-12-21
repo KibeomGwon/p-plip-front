@@ -4,11 +4,13 @@
             <div v-for="toast in toasts" :key="toast.id" class="toast-item" :class="toast.type">
                 <span class="toast-icon">
                     <template v-if="toast.type === 'success'">✅</template>
-                    <template v-else-if="toast.type === 'warning'">⚠️</template>
-                    <template v-else-if="toast.type === 'error'">🚨</template>
+                    <template v-else-if="toast.type === 'warning'">✋</template>
+                    <template v-else-if="toast.type === 'error'">❌</template>
+                    <template v-else-if="toast.type === 'custom'">🤖</template>
                     <template v-else>ℹ️</template>
                 </span>
                 <span class="toast-message">{{ toast.message }}</span>
+                <img :src="tripffy" class="mascot-image" alt="mascot" />
             </div>
         </transition-group>
     </div>
@@ -17,6 +19,7 @@
 <script setup>
 import { useToastStore } from '@/stores/toast';
 import { storeToRefs } from 'pinia';
+import tripffy from '@/assets/common/tripffy.png';
 
 const toastStore = useToastStore();
 const { toasts } = storeToRefs(toastStore);
@@ -25,17 +28,18 @@ const { toasts } = storeToRefs(toastStore);
 <style scoped>
 .toast-container {
     position: fixed;
-    bottom: 130px;
+    bottom: 100px;
+    /* Adjusted bottom position */
     left: 50%;
     transform: translateX(-50%);
     z-index: 9999;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
+    /* Increased gap */
     pointer-events: none;
-    /* Allow clicks through the container */
-    width: 90%;
-    max-width: 400px;
+    width: auto;
+    /* Auto width */
     align-items: center;
 }
 
@@ -43,43 +47,87 @@ const { toasts } = storeToRefs(toastStore);
     pointer-events: auto;
     display: flex;
     align-items: center;
-    padding: 12px 20px;
+    padding: 14px 24px;
+    /* Increased padding */
+    padding-right: 50px;
+    /* Space for mascot */
     border-radius: 50px;
-    background: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    font-size: 14px;
-    font-weight: 500;
-    color: #333;
-    min-width: 280px;
-    justify-content: center;
-    gap: 8px;
+    background: #333;
+    /* Default background */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    min-width: 300px;
+    justify-content: flex-start;
+    /* Align start */
+    gap: 12px;
+    position: relative;
+    /* For mascot positioning */
+    overflow: visible;
+    /* Allow mascot to stick out */
 }
 
+/* Color Themes */
 .toast-item.success {
-    border-left: 4px solid #4caf50;
+    background: #4CAF50;
 }
 
 .toast-item.warning {
-    border-left: 4px solid #ff9800;
+    background: #FF9800;
 }
 
 .toast-item.error {
-    border-left: 4px solid #f44336;
+    background: #F44336;
 }
 
 .toast-item.info {
-    border-left: 4px solid #2196f3;
+    background: #2196F3;
+}
+
+.toast-item.custom {
+    background: #607D8B;
+}
+
+.toast-icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+}
+
+.toast-message {
+    line-height: 1.4;
+}
+
+/* Mascot Image */
+.mascot-image {
+    position: absolute;
+    top: -22px;
+    /* Peek out from top */
+    right: 10px;
+    width: 45px;
+    /* Adjust size */
+    height: auto;
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    transform: rotate(10deg);
 }
 
 /* Transitions */
 .toast-enter-active,
 .toast-leave-active {
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Bouncy effect */
 }
 
 .toast-enter-from,
 .toast-leave-to {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px) scale(0.9);
 }
 </style>

@@ -8,8 +8,8 @@ export const aiApi = {
         m: payload.m || 1000,
         k: payload.k || 5,
         contentTypes: payload.contentTypes || []
-    },{
-        timeout: 60000
+    }, {
+        timeout: 150000
     })
 
 };

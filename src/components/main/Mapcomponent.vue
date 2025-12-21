@@ -4,15 +4,16 @@
       @onLoadKakaoMap="onLoadKakaoMap">
       <!-- User Location Marker (Red) -->
       <KakaoMapMarker :lat="userLocation.lat" :lng="userLocation.lng" :draggable="true" :clickable="false" :image="{
-        imageSrc: 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
-        imageWidth: 64,
-        imageHeight: 69
+        imageSrc: markerCurrent,
+        imageWidth: 40,
+        imageHeight: 40
       }" @onLoadKakaoMapMarker="onLoadUserMarker" />
 
-      <KakaoMapCustomOverlay v-for="marker in markerList" :key="marker.no" :lat="marker.latitude" :lng="marker.longitude"
-        :yAnchor="1" :zIndex="10">
-        <div class="custom-marker-wrapper" @click.stop="onClickMarker(marker)">
-          <img class="custom-marker-image" :class="{ 
+      <KakaoMapCustomOverlay v-for="marker in markerList" :key="marker.no" :lat="marker.latitude"
+        :lng="marker.longitude" :yAnchor="1" :zIndex="10">
+        <div class="custom-marker-wrapper" @click.stop="onClickMarker(marker)" @mousedown.stop @touchstart.stop
+          @pointerup.stop>
+          <img class="custom-marker-image" :class="{
             'shopping-marker': Number(marker.contentType) === 38,
             'festival-marker': Number(marker.contentType) === 15,
             'food-marker': Number(marker.contentType) === 39
@@ -69,6 +70,7 @@ const pageNum = ref(0);
 const isLoading = ref(false);
 const isLocating = ref(false); // For My Location button spinner
 const isLastPage = ref(false);
+const isMarkerClicked = ref(false); // Flag to prevent map click event on marker click
 
 import markerAttraction from '@/assets/markers/marker_attraction.png'
 import markerCulture from '@/assets/markers/marker_culture.png'
@@ -78,6 +80,7 @@ import markerShopping from '@/assets/markers/marker_shopping.png'
 import markerLeports from '@/assets/markers/marker_leports.png'
 import markerFestival from '@/assets/markers/marker_festival.png'
 import markerCourse from '@/assets/markers/marker_course.png'
+import markerCurrent from '@/assets/markers/marker_current.png'
 
 const locationStore = useLocationStore();
 const { location: userLocation, isInitialized } = storeToRefs(locationStore);
@@ -140,6 +143,12 @@ const onLoadKakaoMap = (map) => {
 
     // Add click listener to map to update user location
     window.kakao.maps.event.addListener(map, 'click', (mouseEvent) => {
+      // Check if a marker was just clicked
+      if (isMarkerClicked.value) {
+        console.log("Marker clicked, ignoring map click");
+        return;
+      }
+
       const latlng = mouseEvent.latLng;
       const lat = latlng.getLat();
       const lng = latlng.getLng();
@@ -282,6 +291,12 @@ const moveToLocation = (lat, lng, zoomLevel = null) => {
 
 const onClickMarker = async (marker) => {
   console.log('Marker clicked:', marker);
+
+  // Set flag to prevent map click event
+  isMarkerClicked.value = true;
+  setTimeout(() => {
+    isMarkerClicked.value = false;
+  }, 200);
 
   // Center map on marker and reset zoom
   moveToLocation(marker.latitude, marker.longitude, initialLevel.value);
@@ -475,10 +490,12 @@ onDeactivated(() => {
   outline: none !important;
   box-shadow: none !important;
 }
+
 .custom-marker-wrapper:hover {
   transform: scale(1.1) translateY(-4px);
   z-index: 100;
 }
+
 .custom-marker-image {
   width: 34px;
   height: auto;
@@ -502,6 +519,5 @@ onDeactivated(() => {
   max-height: 42px;
   z-index: 101;
 }
-
 </style>
 ```

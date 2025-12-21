@@ -52,12 +52,12 @@
 
           <div class="center-text">
             <p class="sub-text">어디로 떠날까요?</p>
-            <h2 class="main-text">계획 없는<br>여행의 시작</h2>
+            <h2 class="main-text">부담 없는<br>여행의 시작</h2>
           </div>
 
           <div class="action-area">
             <button class="start-btn" @click="startApp">여행 시작하기</button>
-            <div class="login-link" @click="startApp">로그인</div>
+            <div class="login-link" @click="goToLogin">로그인</div>
           </div>
         </div>
       </div>
@@ -112,6 +112,11 @@ const prevSlide = () => {
 const startApp = () => {
   localStorage.setItem('welcome-seen', 'true');
   router.push({ name: 'main' });
+};
+
+const goToLogin = () => {
+  localStorage.setItem('welcome-seen', 'true');
+  router.push({ name: 'login' });
 };
 
 const neverShowAgain = () => {

@@ -145,6 +145,7 @@ export const usePlanStore = defineStore('plan', () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return plans.value.filter(plan => {
+            if (!plan.startDate || !plan.endDate) return false;
             const end = new Date(plan.endDate);
             return end >= today && plan.completedRate < 100;
         });
@@ -154,9 +155,14 @@ export const usePlanStore = defineStore('plan', () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return plans.value.filter(plan => {
+            if (!plan.startDate || !plan.endDate) return false;
             const end = new Date(plan.endDate);
             return end < today || plan.completedRate >= 100;
         });
+    });
+
+    const planningPlans = computed(() => {
+        return plans.value.filter(plan => !plan.startDate || !plan.endDate);
     });
 
     return {
@@ -170,6 +176,7 @@ export const usePlanStore = defineStore('plan', () => {
         savePlanDetails,
         deletePlan,
         ongoingPlans,
-        pastPlans
+        pastPlans,
+        planningPlans
     };
 });

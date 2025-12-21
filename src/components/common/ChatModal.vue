@@ -233,7 +233,7 @@ const handleSend = async () => {
     console.log("ChatModal: Sending Payload", payload);
 
     // Show loading toast (Long duration, manual removal)
-    loadingToastId = toastStore.addToast('AI가 열심히 여행지를 찾고 있습니다... 🤖', 'info', 600000);
+    loadingToastId = toastStore.addToast('금방 멋진 장소를 찾아드릴게요!😊', 'info', 600000);
 
     // Optional: Interval to update message if it takes very long (Simulating "Keep popping up")
     // But a single persistent one is better UX. 

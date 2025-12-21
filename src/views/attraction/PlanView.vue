@@ -10,7 +10,7 @@
         <section class="section ongoing-section">
           <div class="section-header">
             <h2 class="section-title">진행 중인 여행</h2>
-            <SortFilter v-model="ongoingSortOrder" />
+            <SortFilter v-model="ongoingSortOrder" :options="ongoingSortOptions" />
           </div>
           <div class="ongoing-list" ref="ongoingListRef" @mousedown="startDrag($event, 'ongoing')"
             @mouseleave="stopDrag" @mouseup="stopDrag" @mousemove="onDrag($event, 'ongoing')"
@@ -26,6 +26,13 @@
           </div>
         </section>
 
+        <!-- Create Normal Plan Button -->
+        <!-- Create Normal Plan Button -->
+        <button class="fab-normal" @click="openCreateModal">
+          📝
+        </button>
+
+        <!-- Section: Past Trips -->
         <!-- Section: Past Trips -->
         <section class="section past-section">
           <div class="section-header">
@@ -36,7 +43,19 @@
             @mouseup="stopDrag" @mousemove="onDrag($event, 'past')" @wheel="onWheel($event, 'past')">
             <TripCard v-for="trip in sortedPastTrips" :key="trip.id" :trip="trip" />
           </div>
+        </section>
 
+        <!-- Section: Planning Trips -->
+        <section class="section planning-section">
+          <div class="section-header">
+            <h2 class="section-title">계획 중인 여행</h2>
+            <!-- Sort Filter removed as requested -->
+          </div>
+          <div class="ongoing-list" ref="planningListRef" @mousedown="startDrag($event, 'planning')"
+            @mouseleave="stopDrag" @mouseup="stopDrag" @mousemove="onDrag($event, 'planning')"
+            @wheel="onWheel($event, 'planning')">
+            <TripCard v-for="trip in sortedPlanningTrips" :key="trip.id" :trip="trip" />
+          </div>
         </section>
       </div>
     </div>
@@ -45,6 +64,8 @@
     <div class="bottom-nav">
       <NavBar />
     </div>
+
+    <PlanCreateModal v-model="isCreateModalVisible" @confirm="handleCreatePlan" />
   </div>
 </template>
 
@@ -54,11 +75,34 @@ import NavBar from '@/components/common/Navbar.vue';
 import TripCard from '@/components/attraction/TripCard.vue';
 import SortFilter from '@/components/common/SortFilter.vue';
 import { usePlanStore } from '@/stores/plan';
+import { planApi } from '@/axios/plan';
+import { useToastStore } from '@/stores/toast';
+import PlanCreateModal from '@/components/attraction/PlanCreateModal.vue';
 
 const planStore = usePlanStore();
+const toastStore = useToastStore();
+const isCreateModalVisible = ref(false);
+
+const openCreateModal = () => {
+  isCreateModalVisible.value = true;
+};
+
+const handleCreatePlan = async (title) => {
+  try {
+    const response = await planApi.createPlan(title);
+    if (response) {
+      toastStore.addToast('여행 계획이 생성되었습니다!', 'success');
+      planStore.fetchPlans(); // Refresh list
+    }
+  } catch (error) {
+    console.error("Create plan error:", error);
+    toastStore.addToast('계획 생성 중 오류가 발생했습니다.', 'error');
+  }
+};
 
 const ongoingSortOrder = ref('desc');
 const pastSortOrder = ref('desc');
+const planningSortOrder = ref('desc');
 
 onMounted(() => {
   planStore.fetchPlans();
@@ -100,16 +144,42 @@ const processedPastTrips = computed(() => {
   }));
 });
 
+const processedPlanningTrips = computed(() => {
+  return planStore.planningPlans.map(plan => ({
+    ...plan,
+    image: plan.thumbnail,
+    progress: 0
+  }));
+});
+
+const ongoingSortOptions = [
+  { label: '최신순', value: 'desc' },
+  { label: '오래된순', value: 'asc' },
+  { label: '다가오는순', value: 'closest' }
+];
+
 const sortTrips = (trips, order) => {
   return [...trips].sort((a, b) => {
-    const dateA = new Date(a.startDate);
-    const dateB = new Date(b.startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dateA = a.startDate ? new Date(a.startDate) : new Date(a.createdAt || 0);
+    const dateB = b.startDate ? new Date(b.startDate) : new Date(b.createdAt || 0);
+
+    if (order === 'closest') {
+      // Calculate absolute difference from today
+      const diffA = Math.abs(dateA - today);
+      const diffB = Math.abs(dateB - today);
+      return diffA - diffB;
+    }
+
     return order === 'desc' ? dateB - dateA : dateA - dateB;
   });
 };
 
 const sortedOngoingTrips = computed(() => sortTrips(processedOngoingTrips.value, ongoingSortOrder.value));
 const sortedPastTrips = computed(() => sortTrips(processedPastTrips.value, pastSortOrder.value));
+const sortedPlanningTrips = computed(() => sortTrips(processedPlanningTrips.value, planningSortOrder.value));
 
 const continuePlan = (id) => {
   console.log('Continue plan', id);
@@ -118,6 +188,7 @@ const continuePlan = (id) => {
 // Drag & Wheel Scroll Logic
 const ongoingListRef = ref(null);
 const pastListRef = ref(null);
+const planningListRef = ref(null);
 
 const isDown = ref(false);
 const startX = ref(0);
@@ -125,7 +196,9 @@ const scrollLeft = ref(0);
 const activeContainer = ref(null);
 
 const getContainer = (type) => {
-  return type === 'ongoing' ? ongoingListRef.value : pastListRef.value;
+  if (type === 'ongoing') return ongoingListRef.value;
+  if (type === 'past') return pastListRef.value;
+  return planningListRef.value;
 };
 
 const startDrag = (e, type) => {
@@ -305,6 +378,30 @@ const onWheel = (e, type) => {
   align-items: center;
   cursor: pointer;
   z-index: 100;
+}
+
+.fab-normal {
+  position: absolute;
+  bottom: 90px;
+  /* Above the other FAB if present, or just higher */
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #2196F3;
+  /* Blue */
+  border: none;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 100;
+  font-size: 24px;
+}
+
+.fab-normal:active {
+  transform: scale(0.95);
 }
 
 .fab:active {
