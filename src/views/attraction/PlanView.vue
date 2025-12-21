@@ -10,7 +10,7 @@
         <section class="section ongoing-section">
           <div class="section-header">
             <h2 class="section-title">진행 중인 여행</h2>
-            <SortFilter v-model="ongoingSortOrder" />
+            <SortFilter v-model="ongoingSortOrder" :options="ongoingSortOptions" />
           </div>
           <div class="ongoing-list" ref="ongoingListRef" @mousedown="startDrag($event, 'ongoing')"
             @mouseleave="stopDrag" @mouseup="stopDrag" @mousemove="onDrag($event, 'ongoing')"
@@ -152,14 +152,27 @@ const processedPlanningTrips = computed(() => {
   }));
 });
 
+const ongoingSortOptions = [
+  { label: '최신순', value: 'desc' },
+  { label: '오래된순', value: 'asc' },
+  { label: '다가오는순', value: 'closest' }
+];
+
 const sortTrips = (trips, order) => {
   return [...trips].sort((a, b) => {
-    // For planning trips without dates, sort by ID or title?
-    // Usually they have createdAt if dates are null.
-    // If startDate is present, sort by it. If not, use createdAt or ID.
-    // Assuming createdAt exists.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const dateA = a.startDate ? new Date(a.startDate) : new Date(a.createdAt || 0);
     const dateB = b.startDate ? new Date(b.startDate) : new Date(b.createdAt || 0);
+
+    if (order === 'closest') {
+      // Calculate absolute difference from today
+      const diffA = Math.abs(dateA - today);
+      const diffB = Math.abs(dateB - today);
+      return diffA - diffB;
+    }
+
     return order === 'desc' ? dateB - dateA : dateA - dateB;
   });
 };
