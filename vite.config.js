@@ -54,7 +54,15 @@ export default defineConfig({
         allowedHosts: [
             'm.pplip.c01.kr',
             'pplip.c01.kr'
-        ]
+        ],
+        proxy: {
+            '/mobility': {
+                target: 'https://apis-navi.kakaomobility.com',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/mobility/, ''),
+                secure: false
+            }
+        }
     },
     resolve: {
         alias: {

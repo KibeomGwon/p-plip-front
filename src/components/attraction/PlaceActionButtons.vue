@@ -16,6 +16,13 @@
     </button>
 
     <PlanThemeInputModal v-model="showThemeModal" @confirm="handleThemeConfirm" />
+    
+    <RouteModal 
+      v-if="showRouteModal"
+      :origin="routeOrigin"
+      :destination="routeDestination"
+      @close="showRouteModal = false"
+    />
   </div>
 </template>
 
@@ -23,6 +30,7 @@
 import { ref } from 'vue';
 import { usePlanStore } from '@/stores/plan';
 import PlanThemeInputModal from './PlanThemeInputModal.vue';
+import RouteModal from './RouteModal.vue';
 
 const props = defineProps({
   place: {
@@ -42,6 +50,11 @@ const emit = defineEmits(['close']);
 const planStore = usePlanStore();
 const showThemeModal = ref(false);
 
+// Route Modal State
+const showRouteModal = ref(false);
+const routeOrigin = ref({ lat: 0, lng: 0 });
+const routeDestination = ref({ lat: 0, lng: 0, name: '' });
+
 const handleAiPlanRequest = () => {
   showThemeModal.value = true;
 };
@@ -49,35 +62,33 @@ const handleAiPlanRequest = () => {
 const handleDirections = () => {
   if (!props.place) return;
 
-  // Coordinate handling: check for common field names
-  // TourAPI usually uses mapy (lat) and mapx (lng)
-  // Our DB might use latitude/longitude
   const lat = props.place.latitude || props.place.lat || props.place.mapy;
   const lng = props.place.longitude || props.place.lng || props.place.mapx;
   const name = props.place.name || props.place.title || '도착지';
 
   if (lat && lng) {
-    // Try to get current location for "from" coordinates
+    // Try to get current location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const currentLat = position.coords.latitude;
-          const currentLng = position.coords.longitude;
-          // URL with from (current location) and to (destination)
-          const url = `https://map.kakao.com/link/from/내 위치,${currentLat},${currentLng}/to/${name},${lat},${lng}`;
-          window.open(url, '_blank');
+          routeOrigin.value = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          routeDestination.value = {
+            lat: Number(lat),
+            lng: Number(lng),
+            name: name
+          };
+          showRouteModal.value = true;
         },
         (error) => {
           console.warn("Location access denied or failed:", error);
-          // Fallback: Use only destination
-          const url = `https://map.kakao.com/link/to/${name},${lat},${lng}`;
-          window.open(url, '_blank');
+          alert("현재 위치를 가져올 수 없어 경로를 탐색할 수 없습니다.");
         }
       );
     } else {
-      // Geolocation not supported, fallback to destination only
-      const url = `https://map.kakao.com/link/to/${name},${lat},${lng}`;
-      window.open(url, '_blank');
+      alert("브라우저가 위치 정보를 지원하지 않습니다.");
     }
   } else {
     console.warn("Place coordinates missing:", props.place);

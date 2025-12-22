@@ -170,7 +170,8 @@ const handleDeletePlan = async () => {
   if (confirm('정말로 이 여행 계획을 삭제하시겠습니까? 삭제된 계획은 복구할 수 없습니다.')) {
     const success = await planStore.deletePlan(route.params.id);
     if (success) {
-      router.push({ name: 'plan' });
+      // router.push({ name: 'plan' });
+      router.back();
     }
   }
 };
