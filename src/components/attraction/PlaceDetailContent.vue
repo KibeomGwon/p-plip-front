@@ -112,28 +112,19 @@ const onWheel = (e) => {
   /* Fill remaining space below header */
   display: flex;
   flex-direction: column;
-  /* overflow-y: auto; REMOVED for unified scrolling */
+  overflow-y: auto;
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
   padding-top: 20px;
   /* Add space between header and content */
   touch-action: pan-y;
   /* Allow vertical scrolling */
   overscroll-behavior: contain;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 .bottom-content-wrapper::-webkit-scrollbar {
-  width: 6px;
-  background: transparent;
-}
-
-.bottom-content-wrapper::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 3px;
-}
-
-.bottom-content-wrapper:hover::-webkit-scrollbar-thumb,
-.bottom-content-wrapper:active::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
+  display: none;
 }
 
 .image-carousel {

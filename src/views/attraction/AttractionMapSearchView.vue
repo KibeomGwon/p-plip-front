@@ -45,6 +45,19 @@
         </KakaoMapCustomOverlay>
 
 
+
+        <!-- Current Location Marker -->
+        <KakaoMapMarker 
+          v-if="userLocation"
+          :lat="userLocation.lat" 
+          :lng="userLocation.lng"
+          :image="{
+            imageSrc: markerCurrent,
+            imageWidth: 40,
+            imageHeight: 40
+          }"
+        />
+
       </KakaoMap>
     </div>
 
@@ -65,6 +78,14 @@
 
 
     </div>
+
+    <!-- Clear Map Button (Bottom Left) -->
+    <!-- Clear Map Button (Bottom Left) -->
+    <button v-if="results.length > 0" class="clear-map-btn" @click="clearMap" title="지도 정리">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15.1186 3.00344C15.9329 2.18907 17.2533 2.18907 18.0676 3.00344L20.9964 5.93223C21.8108 6.7466 21.8108 8.06704 20.9964 8.88141L11.558 18.3198C11.5165 18.3614 11.4673 18.3944 11.4132 18.4168L7.87868 19.8814C7.45263 20.058 6.96984 19.8971 6.75736 19.5L6.38699 18.8077L4.69239 20.5023C4.30186 20.8929 3.6687 20.8929 3.27817 20.5023C2.88765 20.1118 2.88765 19.4786 3.27817 19.0881L4.97277 17.3935L4.5 16.5103C4.28751 16.1132 4.45934 15.6179 4.88141 15.4213L6.346 11.8868C6.36845 11.8327 6.40141 11.7835 6.44299 11.7419L15.1186 3.00344ZM16.5932 4.47805L7.91761 13.1537L7.2005 14.8841L9.11579 16.7994L10.8462 16.0823L19.5218 7.40669L16.5932 4.47805Z" fill="#3b82f6"/>
+        </svg>
+    </button>
 
     <!-- Load More Button -->
     <div class="load-more-container" v-if="hasSearched && hasMore && results.length > 0">
@@ -97,11 +118,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { KakaoMap, KakaoMapCustomOverlay, KakaoMapMarker } from 'vue3-kakao-maps';
 import { attractionApi } from '@/axios/attraction';
 import { usePlanStore } from '@/stores/plan';
+import { useLocationStore } from '@/stores/location';
+import { storeToRefs } from 'pinia';
 import CategoryFilter from '@/components/main/CategoryFilter.vue';
 import PlaceDetailSheet from '@/components/attraction/PlaceDetailSheet.vue';
 
@@ -113,6 +136,7 @@ import markerShopping from '@/assets/markers/marker_shopping.png'
 import markerLeports from '@/assets/markers/marker_leports.png'
 import markerFestival from '@/assets/markers/marker_festival.png'
 import markerCourse from '@/assets/markers/marker_course.png'
+import markerCurrent from '@/assets/markers/marker_current.png'
 
 const props = defineProps({
     existingItems: {
@@ -142,6 +166,8 @@ const emit = defineEmits(['close', 'add-item']);
 const route = useRoute();
 const router = useRouter(); 
 const planStore = usePlanStore();
+const locationStore = useLocationStore();
+const { location: userLocation } = storeToRefs(locationStore);
 
 const searchRadius = ref(1000); // Default 1km
 const selectedCategories = ref([]);
@@ -183,6 +209,22 @@ const fitBoundsToExisting = () => {
   }
 };
 
+const fitBoundsToResults = () => {
+  if (mapInstance.value && results.value.length > 0) {
+    const bounds = new window.kakao.maps.LatLngBounds();
+    results.value.forEach(place => {
+        if (place.latitude && place.longitude) {
+            bounds.extend(new window.kakao.maps.LatLng(Number(place.latitude), Number(place.longitude)));
+        }
+    });
+    // Optional: Include current location in bounds so user sees where they are relative to results
+    if (userLocation.value) {
+        bounds.extend(new window.kakao.maps.LatLng(userLocation.value.lat, userLocation.value.lng));
+    }
+    mapInstance.value.setBounds(bounds);
+  }
+};
+
 const onLoadKakaoMap = (map) => {
   mapInstance.value = map;
   
@@ -199,8 +241,29 @@ const onLoadKakaoMap = (map) => {
   if (existingPlanItems.value.length > 0) {
       fitBoundsToExisting();
   } else {
-      // If no items to fit, trigger initial search at default center
-      handleSearch();
+      // If no items, try to fetch current location and move there
+      locationStore.fetchCurrentLocation().then(async (loc) => {
+          if (map) {
+              const moveLatLon = new window.kakao.maps.LatLng(loc.lat, loc.lng);
+              map.setCenter(moveLatLon);
+              // Also update center ref so search uses it
+              center.value = { lat: loc.lat, lng: loc.lng };
+              
+              await handleSearch(); // Search around new location
+              
+              // Use nextTick to ensure DOM is ready, then fit bounds
+              nextTick(() => {
+                  setTimeout(() => {
+                    console.log("Calling fitBoundsToResults with", results.value.length, "items");
+                    fitBoundsToResults(); 
+                  }, 200); // Slightly longer delay to be safe
+              });
+          }
+      }).catch((err) => {
+          console.error("Location fetch failed:", err);
+          // Fallback if location fails
+          handleSearch();
+      });
   }
 };
 
@@ -232,6 +295,12 @@ watch(searchRadius, () => {
 
 const goBack = () => {
   emit('close');
+};
+
+const clearMap = () => {
+    results.value = [];
+    selectedPlace.value = null;
+    hasSearched.value = false; // Reset search state
 };
 
 const onSelectCategory = (categories) => {
@@ -799,6 +868,37 @@ const toLocalISOString = (date) => {
 .custom-add-btn:hover {
     background: #0081d6;
 }
+
+.clear-map-btn {
+    position: absolute;
+    bottom: 30px;
+    left: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.clear-map-btn:hover {
+    transform: translateY(-2px);
+    background-color: #f9f9f9;
+}
+
+.clear-map-btn:active {
+    transform: scale(0.95);
+    background-color: #f5f5f5;
+}
+
+
+
 
 .modal-overlay {
   position: fixed;
