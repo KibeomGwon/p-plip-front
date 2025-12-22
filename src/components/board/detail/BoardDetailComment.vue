@@ -47,7 +47,21 @@
               <button class="action-btn" @click="onDelete(comment)">삭제</button>
             </div>
           </div>
-          <p class="comment-text">{{ comment.content }}</p>
+          <p class="comment-text" v-if="editingCommentId !== comment.id">{{ comment.content }}</p>
+          <div class="edit-mode-wrapper" v-else>
+              <textarea 
+                v-model="editingContent" 
+                class="edit-input"
+                @keydown.enter.ctrl="saveEdit(comment)"
+                @keydown.esc="cancelEdit"
+                ref="editInputRef"
+                rows="3"
+              ></textarea>
+              <div class="edit-actions">
+                  <button class="save-btn" @click="saveEdit(comment)">저장</button>
+                  <button class="cancel-btn" @click="cancelEdit">취소</button>
+              </div>
+          </div>
         </div>
       </div>
     </div>
@@ -91,12 +105,23 @@ const submitComment = (e) => {
   newComment.value = '';
 };
 
+const editingCommentId = ref(null);
+const editingContent = ref("");
+
 const onEdit = (comment) => {
-  // Placeholder for edit functionality
-  const newContent = prompt("댓글을 수정하세요:", comment.content);
-  if (newContent !== null && newContent.trim() !== "") {
-      emit('edit-comment', { ...comment, content: newContent });
-  }
+  editingCommentId.value = comment.id;
+  editingContent.value = comment.content;
+};
+
+const cancelEdit = () => {
+    editingCommentId.value = null;
+    editingContent.value = "";
+};
+
+const saveEdit = (comment) => {
+    if (!editingContent.value.trim()) return;
+    emit('edit-comment', { ...comment, content: editingContent.value });
+    cancelEdit();
 };
 
 const onDelete = (comment) => {
@@ -273,5 +298,58 @@ const onDelete = (comment) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.edit-mode-wrapper {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: white;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.edit-input:focus {
+  border-color: #0095f6;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.save-btn {
+    background: #0095f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    background: #f0f0f0;
+    color: #333;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
 }
 </style>
