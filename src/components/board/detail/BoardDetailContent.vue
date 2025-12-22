@@ -4,7 +4,7 @@
     <div class="image-carousel">
       <div class="carousel-track" @scroll="onScroll" @wheel="onWheel">
         <div v-for="(img, index) in postImages" :key="index" class="carousel-item">
-          <img :src="getImageUrl(img)" alt="Post Image" class="post-image" />
+          <img :src="getImageUrl(img)" alt="Post Image" class="post-image" draggable="false" />
         </div>
       </div>
       <!-- Dots indicator if multiple images -->
@@ -257,6 +257,9 @@ const onWheel = (e) => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 
 .carousel-dots {
