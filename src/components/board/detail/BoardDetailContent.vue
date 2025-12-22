@@ -260,6 +260,8 @@ const onWheel = (e) => {
   user-select: none;
   -webkit-user-select: none;
   -webkit-user-drag: none;
+  pointer-events: none;
+  -webkit-touch-callout: none;
 }
 
 .carousel-dots {
