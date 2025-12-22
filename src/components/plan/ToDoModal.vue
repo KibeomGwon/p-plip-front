@@ -6,29 +6,30 @@
       <div class="form-group">
         <label>제목</label>
         <input v-model="formData.title" type="text" class="form-input" placeholder="일정을 입력하세요"
-          :disabled="readOnlyExceptDesc" :class="{ 'disabled-input': readOnlyExceptDesc }">
+          :disabled="readOnly || readOnlyExceptDesc" :class="{ 'disabled-input': readOnly || readOnlyExceptDesc }">
       </div>
 
       <div class="form-group">
         <label>시작 시간</label>
-        <input v-model="formData.startAt" type="datetime-local" class="form-input" :disabled="readOnlyExceptDesc"
-          :class="{ 'disabled-input': readOnlyExceptDesc }">
+        <input v-model="formData.startAt" type="datetime-local" class="form-input"
+          :disabled="readOnly || readOnlyExceptDesc" :class="{ 'disabled-input': readOnly || readOnlyExceptDesc }">
       </div>
 
       <div class="form-group">
         <label>종료 시간</label>
-        <input v-model="formData.endAt" type="datetime-local" class="form-input" :disabled="readOnlyExceptDesc"
-          :class="{ 'disabled-input': readOnlyExceptDesc }">
+        <input v-model="formData.endAt" type="datetime-local" class="form-input"
+          :disabled="readOnly || readOnlyExceptDesc" :class="{ 'disabled-input': readOnly || readOnlyExceptDesc }">
       </div>
 
       <div class="form-group">
         <label>설명</label>
-        <textarea v-model="formData.description" class="form-input textarea" placeholder="상세 내용을 입력하세요"></textarea>
+        <textarea v-model="formData.description" class="form-input textarea" placeholder="상세 내용을 입력하세요"
+          :disabled="readOnly" :class="{ 'disabled-input': readOnly }"></textarea>
       </div>
 
       <div class="modal-actions">
-        <button class="modal-btn cancel" @click="closeModal">취소</button>
-        <button class="modal-btn save" @click="handleSave">저장</button>
+        <button class="modal-btn cancel" @click="closeModal">{{ readOnly ? '닫기' : '취소' }}</button>
+        <button v-if="!readOnly" class="modal-btn save" @click="handleSave">저장</button>
       </div>
     </div>
   </div>
@@ -51,6 +52,10 @@ const props = defineProps({
     default: 'create'
   },
   readOnlyExceptDesc: {
+    type: Boolean,
+    default: false
+  },
+  readOnly: {
     type: Boolean,
     default: false
   }

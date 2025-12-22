@@ -2,23 +2,33 @@
   <AppPage class="todo-list-page">
     <!-- UI Overlay (Sticky) -->
     <div class="ui-overlay">
-      <button class="fab-btn" @click="openMapSearchWindow">
+      <button v-if="!isViewOnly" class="share-fab-btn" @click="handleShareLink">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="5" r="3" stroke="white" stroke-width="2" />
+          <circle cx="6" cy="12" r="3" stroke="white" stroke-width="2" />
+          <circle cx="18" cy="19" r="3" stroke="white" stroke-width="2" />
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="white" stroke-width="2" />
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="white" stroke-width="2" />
+        </svg>
+      </button>
+
+      <button v-if="!isViewOnly" class="fab-btn" @click="openMapSearchWindow">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </button>
 
       <transition name="slide-up">
-        <button v-if="isDirty" class="save-btn" @click="saveAllChanges">
+        <button v-if="isDirty && !isViewOnly" class="save-btn" @click="saveAllChanges">
           변경사항 저장하기
         </button>
       </transition>
     </div>
 
     <!-- Header -->
-    <AppHeader :title="planTitle">
+    <AppHeader :title="planTitle" :hasBack="!isViewOnly">
       <template #right>
-        <div class="header-right">
+        <div class="header-right" v-if="!isViewOnly">
           <button class="delete-plan-btn" @click="handleDeletePlan">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -46,7 +56,7 @@
       <div v-if="filteredTodoList.length > 0" class="timeline-line"></div>
 
       <draggable v-model="filteredTodoList" item-key="id" handle=".drag-handle" @end="onDragEnd"
-        class="todo-draggable-list" :animation="200" :delay="200" :delay-on-touch-only="true">
+        class="todo-draggable-list" :animation="200" :delay="200" :delay-on-touch-only="true" :disabled="isViewOnly">
         <template #item="{ element, index }">
           <div class="todo-item" :class="[getCardStatusClass(element), { 'is-active': isCurrentItem(element) }]"
             :id="'todo-' + element.id" @click="openEditModal(element)">
@@ -71,7 +81,7 @@
                 </div>
 
                 <!-- Delete Button -->
-                <button class="delete-btn" @click.stop="deleteTodo(element.id, index)">
+                <button v-if="!isViewOnly" class="delete-btn" @click.stop="deleteTodo(element.id, index)">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6L6 18M6 6L18 18" stroke="#ccc" stroke-width="2" stroke-linecap="round"
                       stroke-linejoin="round" />
@@ -92,30 +102,27 @@
 
     <!-- ToDo Modal -->
     <ToDoModal :isVisible="isModalOpen" :initialData="selectedTodo" :mode="modalMode"
-      :readOnlyExceptDesc="isReadOnlyExceptDesc" @close="closeModal" @save="onSaveTodo" />
+      :readOnlyExceptDesc="isReadOnlyExceptDesc" :readOnly="isViewOnly" @close="closeModal" @save="onSaveTodo" />
 
     <!-- Plan Map Modal -->
     <PlanMapModal :isVisible="isMapModalOpen" :todoList="todoList" @close="closeMapModal" />
 
     <!-- Map View Button (Fixed Bottom) -->
     <div class="map-btn-container" :class="{ 'with-save-btn': isDirty }">
-       <button class="map-view-btn" @click="openMapModal">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="map-icon">
-            <path d="M1 6V22L8 18L16 22L23 18V2L16 6L8 2L1 6Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M8 2V18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M16 6V22" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          지도로 보기
-       </button>
+      <button class="map-view-btn" @click="openMapModal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="map-icon">
+          <path d="M1 6V22L8 18L16 22L23 18V2L16 6L8 2L1 6Z" stroke="white" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path d="M8 2V18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M16 6V22" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        지도로 보기
+      </button>
     </div>
 
     <!-- Full Screen Search Overlay -->
     <div v-if="isSearchOpen" class="search-view-overlay">
-        <AttractionMapSearchView 
-            :existing-items="todoList"
-            @add-item="onAddItem"
-            @close="isSearchOpen = false"
-        />
+      <AttractionMapSearchView :existing-items="todoList" @add-item="onAddItem" @close="isSearchOpen = false" />
     </div>
 
   </AppPage>
@@ -131,10 +138,33 @@ import AppHeader from '@/components/common/AppHeader.vue';
 import AppPage from '@/components/common/AppPage.vue';
 import { usePlanStore } from '@/stores/plan';
 import AttractionMapSearchView from '@/views/attraction/AttractionMapSearchView.vue';
+import { useToastStore } from '@/stores/toast';
+
+const props = defineProps({
+  readonly: {
+    type: Boolean,
+    default: false
+  }
+});
+
+const isViewOnly = computed(() => props.readonly);
 
 const router = useRouter();
 const route = useRoute();
 const planStore = usePlanStore();
+const toastStore = useToastStore();
+
+const handleShareLink = async () => {
+  const url = `${window.location.origin}/share-plan/${route.params.id}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    toastStore.addToast('공유 링크가 복사되었습니다!', 'success');
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+    // Fallback or alert
+    alert('링크 복사에 실패했습니다.');
+  }
+};
 
 const handleDeletePlan = async () => {
   if (confirm('정말로 이 여행 계획을 삭제하시겠습니까? 삭제된 계획은 복구할 수 없습니다.')) {
@@ -306,7 +336,7 @@ const openCreateModal = () => {
 const openEditModal = (todo) => {
   modalMode.value = 'edit';
   selectedTodo.value = todo;
-  
+
   // Check if past (End time < Now)
   const end = new Date(todo.endAt);
   const now = new Date();
@@ -415,50 +445,50 @@ const openMapSearchWindow = () => {
 };
 
 const onAddItem = (item) => {
-    // Add to list
-    todoList.value.push({
-        ...item,
-        id: null,
-        planId: Number(route.params.id)
-    });
-    
-    // Re-sort
-    sortListByTime();
-    // Note: No need to sync to store draft anymore, we just keep local state
+  // Add to list
+  todoList.value.push({
+    ...item,
+    id: null,
+    planId: Number(route.params.id)
+  });
+
+  // Re-sort
+  sortListByTime();
+  // Note: No need to sync to store draft anymore, we just keep local state
 };
 
 onMounted(async () => {
   const planId = route.params.id;
   if (planId) {
     const data = await planStore.fetchPlanDetails(planId);
-    
+
     // Map API data (or Store data) to local format
     todoList.value = data.map(item => {
-        // Determine if item is already in local format (has startAt) or API format (willStartAt)
-        const isLocal = !!item.startAt;
-        const start = isLocal ? item.startAt : toLocalISOString(item.willStartAt);
-        const end = isLocal ? item.endAt : toLocalISOString(item.willEndAt);
-        
-        // Calculate duration safely
-        let duration = item.durationMinutes;
-        if (duration === undefined) {
-             const sDate = new Date(isLocal ? start : item.willStartAt);
-             const eDate = new Date(isLocal ? end : item.willEndAt);
-             duration = Math.floor((eDate - sDate) / 60000);
-        }
+      // Determine if item is already in local format (has startAt) or API format (willStartAt)
+      const isLocal = !!item.startAt;
+      const start = isLocal ? item.startAt : toLocalISOString(item.willStartAt);
+      const end = isLocal ? item.endAt : toLocalISOString(item.willEndAt);
 
-        return {
-          ...item,
-          startAt: start,
-          endAt: end,
-          durationMinutes: duration,
-          image: item.image || item.attractionImage,
-          latitude: item.latitude,
-          longitude: item.longitude
-        };
+      // Calculate duration safely
+      let duration = item.durationMinutes;
+      if (duration === undefined) {
+        const sDate = new Date(isLocal ? start : item.willStartAt);
+        const eDate = new Date(isLocal ? end : item.willEndAt);
+        duration = Math.floor((eDate - sDate) / 60000);
+      }
+
+      return {
+        ...item,
+        startAt: start,
+        endAt: end,
+        durationMinutes: duration,
+        image: item.image || item.attractionImage,
+        latitude: item.latitude,
+        longitude: item.longitude
+      };
     });
-    
-    sortListByTime(); 
+
+    sortListByTime();
     originalTodoList.value = JSON.parse(JSON.stringify(todoList.value));
 
     initSelectedDate();
@@ -793,6 +823,7 @@ const scrollToCurrent = () => {
 }
 
 .fab-btn {
+  /* Changed to absolute relative to container if we want, or just keep fixed/absolute */
   position: absolute;
   bottom: calc(88px + env(safe-area-inset-bottom));
   right: 24px;
@@ -801,15 +832,43 @@ const scrollToCurrent = () => {
   border-radius: 50%;
   background: #0095f6;
   border: none;
-  box-shadow: 0 4px 16px rgba(0, 149, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 149, 246, 0.4);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 200;
   transition: transform 0.2s;
+  z-index: 200;
+  pointer-events: auto;
+  /* Ensure clickable */
+}
+
+.share-fab-btn {
+  position: absolute;
+  bottom: calc(88px + 56px + 16px + env(safe-area-inset-bottom));
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #333;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  z-index: 200;
   pointer-events: auto;
 }
+
+.share-fab-btn:active {
+  transform: scale(0.95);
+}
+
+
 
 .fab-btn:active {
   transform: scale(0.95);
@@ -836,21 +895,21 @@ const scrollToCurrent = () => {
   transition: transform 0.2s;
 }
 
-.search-view-overlay {
-    position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 430px; /* Match App.vue max-width */
-    height: 100%; /* Or 100vh? Fixed usually needs explicit height */
-    bottom: 0;
-    z-index: 9999;
-    background: white;
-}
-
 .save-btn:active {
   transform: translateX(-50%) scale(0.98);
+}
+
+.search-view-overlay {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  height: 100%;
+  bottom: 0;
+  z-index: 9999;
+  background: white;
 }
 
 .slide-up-enter-active,
@@ -871,13 +930,13 @@ const scrollToCurrent = () => {
   right: 0;
   display: flex;
   justify-content: center;
-  z-index: 90; /* Below UI Overlay (100) but above content */
-  pointer-events: none; /* Container passes clicks */
+  z-index: 90;
+  pointer-events: none;
   transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .map-btn-container.with-save-btn {
-  bottom: calc(90px + env(safe-area-inset-bottom)); /* Shift up above the save button */
+  bottom: calc(90px + env(safe-area-inset-bottom));
 }
 
 .map-view-btn {
@@ -892,7 +951,7 @@ const scrollToCurrent = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   transition: transform 0.2s;
 }
