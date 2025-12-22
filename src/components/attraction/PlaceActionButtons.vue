@@ -1,6 +1,6 @@
 <template>
   <div class="action-buttons">
-    <button class="primary-btn">
+    <button class="primary-btn" @click="handleDirections">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" stroke="white" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round" />
@@ -44,6 +44,45 @@ const showThemeModal = ref(false);
 
 const handleAiPlanRequest = () => {
   showThemeModal.value = true;
+};
+
+const handleDirections = () => {
+  if (!props.place) return;
+
+  // Coordinate handling: check for common field names
+  // TourAPI usually uses mapy (lat) and mapx (lng)
+  // Our DB might use latitude/longitude
+  const lat = props.place.latitude || props.place.lat || props.place.mapy;
+  const lng = props.place.longitude || props.place.lng || props.place.mapx;
+  const name = props.place.name || props.place.title || '도착지';
+
+  if (lat && lng) {
+    // Try to get current location for "from" coordinates
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentLat = position.coords.latitude;
+          const currentLng = position.coords.longitude;
+          // URL with from (current location) and to (destination)
+          const url = `https://map.kakao.com/link/from/내 위치,${currentLat},${currentLng}/to/${name},${lat},${lng}`;
+          window.open(url, '_blank');
+        },
+        (error) => {
+          console.warn("Location access denied or failed:", error);
+          // Fallback: Use only destination
+          const url = `https://map.kakao.com/link/to/${name},${lat},${lng}`;
+          window.open(url, '_blank');
+        }
+      );
+    } else {
+      // Geolocation not supported, fallback to destination only
+      const url = `https://map.kakao.com/link/to/${name},${lat},${lng}`;
+      window.open(url, '_blank');
+    }
+  } else {
+    console.warn("Place coordinates missing:", props.place);
+    alert("장소 위치 정보를 찾을 수 없습니다.");
+  }
 };
 
 const handleThemeConfirm = ({ theme, startDate, endDate }) => {
