@@ -175,64 +175,59 @@ const updateImageStyle = () => {
 };
 
 const cropImage = () => {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
   const img = imageRef.value;
+  const cropSize = 300; // Visual crop box size
+  const scaleVal = scale.value;
+  const pos = position.value;
   
-  // Crop box size (fixed 1:1 aspect ratio, e.g., 300x300 displayed)
-  // We need to map the displayed crop box to the actual image coordinates
+  // Calculate the crop region in the original image's coordinates
+  // 1. Determine how many pixels of the original image match the 300px visual area.
+  //    If scale is 1, 300px visual = 300px original.
+  //    If scale is 0.5, 300px visual = 600px original (we see more).
+  const sourceWidth = cropSize / scaleVal;
+  const sourceHeight = cropSize / scaleVal;
   
-  // For simplicity in this custom implementation, we'll assume the crop box is the center of the view
-  // and we capture what's visible in that box.
+  // 2. Determine the top-left coordinate of the crop region on the original image.
+  //    The image is centered visually at (150, 150) + (pos.x, pos.y).
+  //    Inverse transform: Map visual (0,0) to image space.
   
-  const cropSize = 300; // The visual size of the crop box
-  canvas.width = cropSize;
-  canvas.height = cropSize;
+  const naturalCenter_x = img.naturalWidth / 2;
+  const naturalCenter_y = img.naturalHeight / 2;
   
-  // Calculate draw parameters
-  // The image is transformed by translate(x, y) and scale(s) relative to the center of the container
-  // Container center = (containerWidth/2, containerHeight/2)
+  // Visual Center of crop box is (150, 150).
+  // The pixel at Visual Center corresponds to the Image pixel at:
+  // NaturalCenter - (pos / scale)
+  // Wait, if pos.x is positive (shifted right), the center of the crop box sees pixels to the LEFT of the image center.
+  // So: ImagePoint = NaturalCenter - (pos / scale).
   
-  // This math can be tricky. 
-  // Simplified approach: Draw the image onto the canvas with the same transforms
+  // Top-left of crop box is (-150, -150) relative to Visual Center.
+  // So in image space, that's -150/scale relative to ImagePoint.
   
-  // But we want the resulting image to be the cropped version.
+  const sourceX = naturalCenter_x - (pos.x / scaleVal) - (cropSize / 2 / scaleVal);
+  const sourceY = naturalCenter_y - (pos.y / scaleVal) - (cropSize / 2 / scaleVal);
   
-  // Let's try a different approach:
-  // 1. Draw the image to a temporary canvas at full size.
-  // 2. Extract the region corresponding to the crop box.
+  // Create canvas at full resolution of the source region
+  const canvas = document.createElement('canvas');
+  canvas.width = sourceWidth;
+  canvas.height = sourceHeight;
+  const ctx = canvas.getContext('2d');
   
-  // Actually, standard drawImage with transforms is easier.
-  // Center of canvas = (150, 150)
-  // We want to draw the image such that the point that is currently at the center of the crop box
-  // ends up at the center of the canvas.
+  // Use high quality smoothing
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   
-  // Current visual center of image = (imgWidth/2, imgHeight/2) + (x, y)
-  // Wait, transform is applied to the element.
+  // Draw the portion of the original image directly onto the canvas
+  // We clamps the values to avoid index errors, though constrainPosition should basically handle it.
+  ctx.drawImage(
+    img, 
+    sourceX, sourceY, sourceWidth, sourceHeight, 
+    0, 0, sourceWidth, sourceHeight
+  );
   
-  // Let's use the visual values.
-  // The crop box is centered in the .cropper-area.
-  // .cropper-area is say 350x350. Crop box is 300x300.
-  
-  // Let's assume crop box IS the container for simplicity of math, or fixed size.
-  
-  // Let's simply draw the image into the canvas using the current scale and position.
-  // Since the crop box is centered, we translate to center, apply transforms, then draw.
-  
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, cropSize, cropSize);
-  
-  ctx.save();
-  ctx.translate(cropSize / 2, cropSize / 2);
-  ctx.translate(position.value.x, position.value.y);
-  ctx.scale(scale.value, scale.value);
-  // Draw image centered
-  ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-  ctx.restore();
-  
+  // Export at maximum quality
   canvas.toBlob((blob) => {
     emit('crop', blob);
-  }, 'image/jpeg', 0.9);
+  }, 'image/jpeg', 1.0);
 };
 </script>
 
