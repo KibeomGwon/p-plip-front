@@ -24,12 +24,12 @@ export default defineConfig({
                 theme_color: '#ffffff', // 상단 상태바 색상
                 icons: [
                     {
-                        src: 'pwa-192x192.png', // public 폴더에 이 이미지가 있어야 함
+                        src: 'tripffy.png', // public 폴더에 이 이미지가 있어야 함
                         sizes: '192x192',
                         type: 'image/png'
                     },
                     {
-                        src: 'pwa-512x512.png', // public 폴더에 이 이미지가 있어야 함
+                        src: 'tripffy.png', // public 폴더에 이 이미지가 있어야 함
                         sizes: '512x512',
                         type: 'image/png'
                     }

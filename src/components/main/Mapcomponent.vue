@@ -83,7 +83,7 @@ import markerCourse from '@/assets/markers/marker_course.png'
 import markerCurrent from '@/assets/markers/marker_current.png'
 
 const locationStore = useLocationStore();
-const { location: userLocation, isInitialized } = storeToRefs(locationStore);
+const { location: userLocation, isInitialized, lastMapCenter } = storeToRefs(locationStore);
 
 // Watchers for filters
 watch(() => [props.contentType, props.searchQuery, props.searchRadius], () => {
@@ -111,34 +111,81 @@ const onLoadKakaoMap = (map) => {
   mapRef.value = map;
   initialLevel.value = map.getLevel();
 
-  // Try to get user's current location via Store
-  locationStore.fetchCurrentLocation()
-    .then((loc) => {
-      console.log(`User stored location: ${loc.lat}, ${loc.lng}`);
+  // Check for persisted center first
+  if (lastMapCenter.value) {
+    console.log("Using persisted map center:", lastMapCenter.value);
+    if (window.kakao && window.kakao.maps) {
+      const moveLatLon = new window.kakao.maps.LatLng(lastMapCenter.value.lat, lastMapCenter.value.lng);
+      map.setCenter(moveLatLon);
+    }
+    emit('update-center', lastMapCenter.value);
 
-      // Move map to user location initially
-      if (window.kakao && window.kakao.maps) {
-        const moveLatLon = new window.kakao.maps.LatLng(loc.lat, loc.lng);
-        map.setCenter(moveLatLon);
-      }
+    // Fetch attractions around persisted center
+    // We assume search radius is already handled or default
+    // We reuse fetchAttractions but we need to ensure it uses the MAP center, not just userLocation if reset?
+    // fetchAttractions implementation uses `userLocation` (Line 170).
+    // Use `isLoading` check inside `fetchAttractions`.
 
-      // Explicitly update parent immediately
-      emit('update-center', { lat: loc.lat, lng: loc.lng });
+    // To search around MAP CENTER:
+    // We can temporarily update userLocation? No, that shifts the blue dot.
+    // fetchAttractions logic needs to be aware of "current center".
+    // BUT, existing logic: 
+    // const centerLat = userLocation.value.lat;
+    // It seems `fetchAttractions` is hardcoded to `userLocation`.
 
-      // Fetch data based on this fixed location
-      fetchAttractions(true, false);
-    })
-    .catch((err) => {
-      console.error("Geolocation failed:", err);
-      // Fallback to default location fetch (Jeju or previous)
-      fetchAttractions(true, false);
-    });
+    // If the user panned, `fetchAttractions` with `isReset=true` resets list.
+    // Ideally we want to load data around the *center*.
+
+    // Let's modify fetchAttractions slightly OR pass explicit center?
+    // Existing `fetchAttractions` uses `userLocation`.
+    // Let's check `fetchAttractions`. It uses `userLocation`.
+
+    // For now, let's just trigger it. If it uses userLocation, it might load data far away?
+    // Wait, the user said "Don't track back to current location visually".
+    // If we visual-pan to persisted center, but load data for current location, that's mismatch.
+    // But `fetchAttractions` is called on dragend? 
+    // No, `dragend` only resorts markers (`sortMarkers`). It doesn't re-fetch from API.
+    // API is only called on Load or Filter change (Watchers).
+
+    // So if I Pan away, I see markers that were loaded mostly around original location.
+    // If I want to load *new* markers there, I need to search again.
+    // But typically `fetchAttractions` uses `userLocation` as origin for "Nearby" search.
+
+    // The user just said "Don't track back to current location".
+    // So restoring visual center is key.
+    fetchAttractions(true, false);
+  } else {
+    // Try to get user's current location via Store
+    locationStore.fetchCurrentLocation()
+      .then((loc) => {
+        console.log(`User stored location: ${loc.lat}, ${loc.lng}`);
+
+        // Move map to user location initially
+        if (window.kakao && window.kakao.maps) {
+          const moveLatLon = new window.kakao.maps.LatLng(loc.lat, loc.lng);
+          map.setCenter(moveLatLon);
+        }
+
+        // Explicitly update parent immediately
+        emit('update-center', { lat: loc.lat, lng: loc.lng });
+
+        // Fetch data based on this fixed location
+        fetchAttractions(true, false);
+      })
+      .catch((err) => {
+        console.error("Geolocation failed:", err);
+        // Fallback to default location fetch (Jeju or previous)
+        fetchAttractions(true, false);
+      });
+  }
 
   if (window.kakao && window.kakao.maps) {
     // Re-sort list when map is dragged (List always reflects distance from CURRENT VIEW)
     window.kakao.maps.event.addListener(map, 'dragend', () => {
       const center = map.getCenter();
       sortMarkers(center.getLat(), center.getLng());
+      // Update store with new center
+      locationStore.setMapCenter(center.getLat(), center.getLng());
     });
 
     // Add click listener to map to update user location

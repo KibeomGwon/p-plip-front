@@ -13,12 +13,12 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="stats-row">
+      <!-- <div class="stats-row">
         <div class="stat-card">
           <span class="stat-value text-sm">내 스토리 북</span>
           <span class="stat-label">추후 구현</span>
         </div>
-      </div>
+      </div> -->
 
       <div class="divider"></div>
 
@@ -73,7 +73,7 @@
               <path d="M9 18L15 12L9 6" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </li>
-          <li class="menu-item">
+          <!-- <li class="menu-item">
             <div class="menu-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -89,7 +89,7 @@
               xmlns="http://www.w3.org/2000/svg">
               <path d="M9 18L15 12L9 6" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
-          </li>
+          </li> -->
         </ul>
       </div>
       <div class="divider"></div>

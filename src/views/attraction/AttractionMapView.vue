@@ -21,8 +21,11 @@
         <button class="clear-map-btn" @click="onClearMap" title="지도 지우기">
             <!-- Eraser SVG Icon -->
             <!-- Eraser SVG Icon -->
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 21L2.7 16.7C1.7 15.7 1.7 14.2 2.7 13.3L12.3 3.7C13.3 2.7 14.8 2.7 15.8 3.7L21.4 9.3C22.4 10.3 22.4 11.8 21.4 12.7L13 21"></path>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M7 21L2.7 16.7C1.7 15.7 1.7 14.2 2.7 13.3L12.3 3.7C13.3 2.7 14.8 2.7 15.8 3.7L21.4 9.3C22.4 10.3 22.4 11.8 21.4 12.7L13 21">
+                </path>
                 <path d="M22 21H7"></path>
                 <path d="M5 11L14 20"></path>
             </svg>

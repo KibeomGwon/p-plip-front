@@ -56,12 +56,56 @@ export const useLocationStore = defineStore('location', () => {
         // MapComponent watches props/state triggers, but let's ensure consistency.
     };
 
+    // Real-time tracking
+    const watchId = ref(null);
+    const isTracking = ref(false);
+
+    const startTracking = () => {
+        if (!navigator.geolocation) {
+            console.error("Geolocation is not supported.");
+            return;
+        }
+        if (isTracking.value) return;
+
+        isTracking.value = true;
+        console.log("Starting location tracking (interval: 5 min)...");
+
+        // Initial fetch
+        fetchCurrentLocation().catch(err => console.warn("Initial tracking fetch failed:", err));
+
+        // Set interval for every 5 minutes (300,000 ms)
+        watchId.value = setInterval(() => {
+            console.log("Tracking interval: fetching location...");
+            fetchCurrentLocation().catch(err => console.warn("Tracking fetch failed:", err));
+        }, 300000);
+    };
+
+    const stopTracking = () => {
+        if (watchId.value !== null) {
+            clearInterval(watchId.value);
+            watchId.value = null;
+        }
+        isTracking.value = false;
+        console.log("Location tracking stopped.");
+    };
+
+    // Map Persistence
+    const lastMapCenter = ref(null);
+    const setMapCenter = (lat, lng) => {
+        lastMapCenter.value = { lat, lng };
+    };
+
     return {
         location,
         isLoading,
         error,
         isInitialized,
+        isTracking,
+        lastMapCenter,
         fetchCurrentLocation,
-        updateLocation
+        updateLocation,
+        startTracking,
+        stopTracking,
+        setMapCenter
     };
 });
