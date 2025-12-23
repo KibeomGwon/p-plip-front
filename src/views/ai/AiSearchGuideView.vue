@@ -7,7 +7,7 @@
           <path d="M15 18L9 12L15 6" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-      <h1 class="page-title">새로운 기능</h1>
+      <h1 class="page-title">AI 검색 가이드</h1>
       <div class="header-right">
       </div>
     </header>
@@ -74,7 +74,7 @@
         </div>
 
       </div>
-      <footer class="footer">
+      <footer class="footer" v-if="showStartButton">
         <button class="start-btn" @click="handleStart">
           지금 시작하기
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -88,21 +88,25 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import aiSearchButtonImg from '@/assets/ai/ai-search-button.png';
 import aiSearchBarImg from '@/assets/ai/ai-search-bar.png';
 import aiFilterDetailImg from '@/assets/ai/ai-filter-detail.png';
+import { computed } from 'vue';
 
 const router = useRouter();
+const route = useRoute();
+
+const showStartButton = computed(() => route.query.hideStart !== 'true');
 
 const handleStart = () => {
-    // Navigate to map search with a query or param if needed, or just normal navigation
-    // As per context, user wants "Start Now", assuming it goes to the feature.
-    // Ideally this goes to the map view where the AI feature button is.
-    // For now, let's go back or to main map view.
-    // Since there's no specific route for "AI Search Mode", I'll link to main or plan map.
-    // Let's assume hitting "Start" enables the feature or just takes you there.
-    router.push({ name: 'main' }); 
+    // Show confirmation dialog
+    if (confirm("다음부터 보지 않으시겠습니까?")) {
+        // User clicked "Yes" (OK) -> Hide guide next time
+        localStorage.setItem('hideAiGuide', 'true');
+    }
+    // Proceed to Map View
+    router.push({ name: 'attraction-map' });
 };
 </script>
 

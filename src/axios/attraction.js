@@ -18,4 +18,5 @@ export const attractionApi = {
   getAttractionsByRegion: (data) => api.get(`/trip/attraction/suggest/sido-guguns`, { params: data }),
   getSearchHistory: (params) => api.get("/trip/attraction/search-history", { params }),
   deleteSearchHistory: (id) => api.delete(`/trip/attraction/search-history/${id}`),
+  getMostReviewAttractions: (params) => api.get("/trip/attraction", { params: params}),
 };
