@@ -136,6 +136,11 @@ const router = createRouter({
       path: '/welcome',
       name: 'welcome',
       component: () => import('@/views/WelcomeView.vue')
+    },
+    {
+      path: '/ai-guide',
+      name: 'ai-guide',
+      component: () => import('@/views/ai/AiSearchGuideView.vue')
     }
   ],
 })
