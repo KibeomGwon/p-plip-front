@@ -21,19 +21,24 @@
         <button class="clear-map-btn" @click="onClearMap" title="지도 지우기">
             <!-- Eraser SVG Icon -->
             <!-- Eraser SVG Icon -->
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 21L2.7 16.7C1.7 15.7 1.7 14.2 2.7 13.3L12.3 3.7C13.3 2.7 14.8 2.7 15.8 3.7L21.4 9.3C22.4 10.3 22.4 11.8 21.4 12.7L13 21"></path>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M7 21L2.7 16.7C1.7 15.7 1.7 14.2 2.7 13.3L12.3 3.7C13.3 2.7 14.8 2.7 15.8 3.7L21.4 9.3C22.4 10.3 22.4 11.8 21.4 12.7L13 21">
+                </path>
                 <path d="M22 21H7"></path>
                 <path d="M5 11L14 20"></path>
             </svg>
         </button>
 
-        <!-- My Location Button (Bottom Right, above ChatFab) -->
         <button class="my-location-btn" @click="handleResetLocation" title="내 위치로">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" stroke="#3b82f6"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <circle cx="12" cy="12" r="3" fill="#3b82f6" />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="8" />
+                <line x1="12" y1="2" x2="12" y2="9" />
+                <line x1="12" y1="15" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="9" y2="12" />
+                <line x1="15" y1="12" x2="22" y2="12" />
             </svg>
         </button>
 
