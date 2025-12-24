@@ -3,7 +3,7 @@
         <!-- Map Background -->
         <div class="map-background">
             <MapComponent ref="mapComp" :contentType="selectedContentType" :searchQuery="searchQuery"
-                :searchRadius="searchRadius" @update-places="updatePlaces" @update-loading="updateLoading"
+                :searchRadius="searchRadius" :initialFetch="shouldInitialFetch" @update-places="updatePlaces" @update-loading="updateLoading"
                 @reset-list="onResetList" @update-center="updateMapCenter" />
         </div>
 
@@ -73,13 +73,18 @@ export default {
 </script>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 import MapComponent from '@/components/main/Mapcomponent.vue';
 import SearchBar from '@/components/main/SearchBar.vue';
 import CategoryFilter from '@/components/main/CategoryFilter.vue';
 import PlaceList from '@/components/main/PlaceList.vue';
 import NavBar from '@/components/common/Navbar.vue';
 import ChatModal from '@/components/common/ChatModal.vue';
+import { storeToRefs } from 'pinia';
+import { useLocationStore } from '@/stores/location';
+
+const locationStore = useLocationStore();
 
 // No direct import needed for attractionApi here if using MapComponent's logic, 
 // but used for tracking logic if needed.
@@ -95,6 +100,12 @@ const isLoading = ref(false);
 const searchQuery = ref('');
 const searchRadius = ref(0);
 
+const { aiSearchResults } = storeToRefs(locationStore);
+const shouldInitialFetch = computed(() => {
+    // If we have AI results to restore, SKIP initial fetch in MapComponent
+    return !(aiSearchResults.value && aiSearchResults.value.length > 0);
+});
+
 const currentMapCenter = ref({ lat: 33.450701, lng: 126.570667 });
 
 const onSearch = ({ query, dist }) => {
@@ -107,6 +118,7 @@ const onSearch = ({ query, dist }) => {
     }
 
     // Commit pending categories to trigger search
+    locationStore.removeAiSearchResults();
     selectedContentType.value = [...pendingContentType.value];
 
     // Force refresh if needed
@@ -138,6 +150,7 @@ const onClearMap = () => {
         mapComp.value.setMarkers([]);
     }
     places.value = [];
+    locationStore.removeAiSearchResults();
     closeSheet();
 };
 
@@ -169,6 +182,7 @@ const updateMapCenter = (center) => {
 
 const handleAiResponse = (data) => {
     console.log("MainView: handleAiResponse called", data);
+    locationStore.removeAiSearchResults();
     if (!data || data.length === 0) {
         console.warn("MainView: No data received or empty array");
         places.value = [];
@@ -177,13 +191,34 @@ const handleAiResponse = (data) => {
     }
 
     // Update places immediately to ensure list works even if map has issues
-    places.value = data;
+    // Update places immediately to ensure list works even if map has issues
+    // Ensure data has correct property names for MapComponent
+    if (data.length > 0) {
+        console.log("AI Response First Item Keys:", Object.keys(data[0]));
+        console.log("AI Response First Item:", data[0]);
+    }
+
+    const formattedData = data.map(item => ({
+        ...item,
+        // Map common mismatches if necessary. Try multiple common keys.
+        contentType: Number(item.contentType || item.content_type || item.contentTypeId || item.type || 12), 
+        latitude: Number(item.latitude || item.mapy || item.lat),
+        longitude: Number(item.longitude || item.mapx || item.lng)
+    }));
+
+    places.value = formattedData;
     console.log("MainView: Updated places locally. Count:", places.value.length);
+    
+    // Persist to store (User Request)
+    // Persist to store (User Request)
+    locationStore.setAiSearchResults(formattedData);
 
     // Update markers on Map
     if (mapComp.value) {
         console.log("MainView: Calling mapComp.setMarkers");
-        mapComp.value.setMarkers(data);
+        mapComp.value.setMarkers(formattedData);
+        // Fit bounds to show all markers (User Request)
+        mapComp.value.fitBoundsToMarkers(formattedData);
     } else {
         console.error("MainView: mapComp ref is null!");
     }
@@ -196,6 +231,46 @@ const handleAiResponse = (data) => {
         console.log("MainView: List button should appear now.");
     }
 };
+
+
+
+onMounted(() => {
+    // Restore AI results if available
+    if (aiSearchResults.value && aiSearchResults.value.length > 0) {
+        console.log("Restoring AI search results from store...");
+        places.value = aiSearchResults.value;
+        // Wait for map to be ready? MapComponent handles setMarkers via ref, checking if ref exists provided complication.
+        // MapComponent uses onLoadKakaoMap to set mapRef.
+        // If map is not ready yet, we can't set markers.
+        // However, MapComponent exposes 'setMarkers' which modifies a ref 'markerList'.
+        // So if we call setMarkers, it updates the list, and v-for renders CustomOverlays.
+        // This works Reactively even if map isn't fully "loaded" (just needs to exist in DOM).
+        // But mapComp ref might be null on mount of PARENT? No, child mounts before parent mounted?
+        // No, parent mounted -> child mounted.
+        // Wait, onMounted is called after child is mounted?
+        // Actually, we should probably watch mapComp or just try/wait.
+        // But better: Use a watcher or try in nextTick?
+        
+        // Actually, since this is setup script, onMounted runs after child components mounted? 
+        // Child's onMounted runs before Parent's onMounted.
+        // So mapComp ref should be available.
+        setTimeout(() => { // Small delay to be safe
+             if (mapComp.value) {
+                mapComp.value.setMarkers(places.value);
+                mapComp.value.fitBoundsToMarkers(places.value);
+             }
+        }, 100);
+    }
+});
+
+onBeforeRouteLeave((to, from, next) => {
+    // If not going to detail view, clear the saved AI results
+    if (to.name !== 'place-detail') {
+        console.log("Leaving map view (not to detail), clearing AI results");
+        locationStore.removeAiSearchResults();
+    }
+    next();
+});
 
 const fetchNextPage = () => {
     if (mapComp.value) {

@@ -53,6 +53,10 @@ const props = defineProps({
   searchRadius: {
     type: Number,
     default: 0 // 0 means use dynamic zoom-based radius, or handle logic
+  },
+  initialFetch: {
+    type: Boolean,
+    default: true
   }
 });
 
@@ -120,40 +124,9 @@ const onLoadKakaoMap = (map) => {
     }
     emit('update-center', lastMapCenter.value);
 
-    // Fetch attractions around persisted center
-    // We assume search radius is already handled or default
-    // We reuse fetchAttractions but we need to ensure it uses the MAP center, not just userLocation if reset?
-    // fetchAttractions implementation uses `userLocation` (Line 170).
-    // Use `isLoading` check inside `fetchAttractions`.
-
-    // To search around MAP CENTER:
-    // We can temporarily update userLocation? No, that shifts the blue dot.
-    // fetchAttractions logic needs to be aware of "current center".
-    // BUT, existing logic: 
-    // const centerLat = userLocation.value.lat;
-    // It seems `fetchAttractions` is hardcoded to `userLocation`.
-
-    // If the user panned, `fetchAttractions` with `isReset=true` resets list.
-    // Ideally we want to load data around the *center*.
-
-    // Let's modify fetchAttractions slightly OR pass explicit center?
-    // Existing `fetchAttractions` uses `userLocation`.
-    // Let's check `fetchAttractions`. It uses `userLocation`.
-
-    // For now, let's just trigger it. If it uses userLocation, it might load data far away?
-    // Wait, the user said "Don't track back to current location visually".
-    // If we visual-pan to persisted center, but load data for current location, that's mismatch.
-    // But `fetchAttractions` is called on dragend? 
-    // No, `dragend` only resorts markers (`sortMarkers`). It doesn't re-fetch from API.
-    // API is only called on Load or Filter change (Watchers).
-
-    // So if I Pan away, I see markers that were loaded mostly around original location.
-    // If I want to load *new* markers there, I need to search again.
-    // But typically `fetchAttractions` uses `userLocation` as origin for "Nearby" search.
-
-    // The user just said "Don't track back to current location".
-    // So restoring visual center is key.
-    fetchAttractions(true, false);
+    if (props.initialFetch) {
+        fetchAttractions(true, false);
+    }
   } else {
     // Try to get user's current location via Store
     locationStore.fetchCurrentLocation()
@@ -170,12 +143,16 @@ const onLoadKakaoMap = (map) => {
         emit('update-center', { lat: loc.lat, lng: loc.lng });
 
         // Fetch data based on this fixed location
-        fetchAttractions(true, false);
+        if (props.initialFetch) {
+            fetchAttractions(true, false);
+        }
       })
       .catch((err) => {
         console.error("Geolocation failed:", err);
         // Fallback to default location fetch (Jeju or previous)
-        fetchAttractions(true, false);
+        if (props.initialFetch) {
+            fetchAttractions(true, false);
+        }
       });
   }
 

@@ -95,6 +95,16 @@ export const useLocationStore = defineStore('location', () => {
         lastMapCenter.value = { lat, lng };
     };
 
+    // AI Search Persistence
+    const aiSearchResults = ref([]);
+    const setAiSearchResults = (results) => {
+        aiSearchResults.value = results;
+    };
+
+    const removeAiSearchResults = () => {
+        aiSearchResults.value = [];
+    };
+
     return {
         location,
         isLoading,
@@ -106,6 +116,9 @@ export const useLocationStore = defineStore('location', () => {
         updateLocation,
         startTracking,
         stopTracking,
-        setMapCenter
+        setMapCenter,
+        aiSearchResults,
+        setAiSearchResults,         
+        removeAiSearchResults
     };
 });
